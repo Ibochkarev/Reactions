@@ -12,4 +12,4 @@ core/components/reactions/vendor/
 coverage/
 *.transport.zip
 .cache/
-stubs/
+/stubs/
