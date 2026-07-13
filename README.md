@@ -74,29 +74,45 @@ php _build/build.php
 ]]
 ```
 
-## Сниппеты
+## Документация
 
-| Сниппет | Назначение |
+| Раздел | Ссылка |
 | --- | --- |
-| `Reactions` | Кнопки реакций с счётчиками |
-| `ReactionsCount` | Счётчики без кнопок |
-| `TopLiked` | Топ объектов по количеству реакций |
-| `TopRated` | Топ по рейтингу (баланс up/down) |
-| `Trending` | Горячие материалы по формуле Reddit |
+| Установка, быстрый старт, настройки | [docs/index.md](docs/index.md) |
+| REST API | [docs/api.md](docs/api.md) |
+| JavaScript-виджет | [docs/js.md](docs/js.md) |
+| CLI | [docs/cli.md](docs/cli.md) |
+| События MODX | [docs/events.md](docs/events.md) |
+| Webhooks | [docs/webhooks.md](docs/webhooks.md) |
 
-Подробное описание параметров и примеры — в [docs/](docs/).
+### Сниппеты
 
-## API
+| Сниппет | Документация |
+| --- | --- |
+| `Reactions` | [docs/snippets/reactions.md](docs/snippets/reactions.md) |
+| `ReactionsCount` | [docs/snippets/reactions-count.md](docs/snippets/reactions-count.md) |
+| `TopLiked` | [docs/snippets/top-liked.md](docs/snippets/top-liked.md) |
+| `TopRated` | [docs/snippets/top-rated.md](docs/snippets/top-rated.md) |
+| `Trending` | [docs/snippets/trending.md](docs/snippets/trending.md) |
+| `ReactionsSchema` | [docs/integrations/seo.md](docs/integrations/seo.md) |
 
-Публичные endpoint'ы: счётчики, реакция пользователя, топы, лента последних реакций. Административные (с проверкой политик MODX): управление типами, наборами, банами, статистика. Спецификация — в [docs/api.md](docs/api.md).
+### Интеграции
+
+| Компонент | Документация |
+| --- | --- |
+| pdoTools | [docs/integrations/pdotools.md](docs/integrations/pdotools.md) |
+| miniShop3 | [docs/integrations/minishop3.md](docs/integrations/minishop3.md) |
+| Tickets | [docs/integrations/tickets.md](docs/integrations/tickets.md) |
+| Collections | [docs/integrations/collections.md](docs/integrations/collections.md) |
+| SEO / Schema.org | [docs/integrations/seo.md](docs/integrations/seo.md) |
 
 ## CLI
 
 ```bash
-php core/vendor/bin/modx reactions:recount
-php core/vendor/bin/modx reactions:type create --name=favorite --emoji=⭐
-php core/vendor/bin/modx reactions:ban add --ip=203.0.113.10
-php core/vendor/bin/modx reactions:stats
+php core/components/reactions/cli.php recount
+php core/components/reactions/cli.php type create --name=favorite --emoji=⭐
+php core/components/reactions/cli.php ban add --ip=203.0.113.10
+php core/components/reactions/cli.php stats
 ```
 
 ## Статус

@@ -1,0 +1,38 @@
+{
+    "name": "modx-extras/reactions-dev",
+    "description": "Development environment for Reactions MODX 3 extra",
+    "require": {
+        "php": ">=8.2.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "mockery/mockery": "^1.6",
+        "pestphp/pest": "^3.0",
+        "phpstan/phpstan": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Reactions\\": "core/components/reactions/src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Reactions\\Tests\\": "tests/"
+        },
+        "files": [
+            "tests/stubs/modX.php"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "pest",
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "cs-fix": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix-apply": "php-cs-fixer fix"
+    }
+}

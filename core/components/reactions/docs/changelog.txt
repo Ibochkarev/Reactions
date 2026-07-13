@@ -1,0 +1,27 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0-pl] - 2026-07-13
+
+### Added
+- Каркас пакета для MODX 3 (структура ModExtra3): bootstrap, DI-сервис `Reactions`, _build, лексиконы en/ru
+- Системные настройки: набор по умолчанию, стратегия идентификации, allow_multiple, rate limit, кэш, webhooks, уведомления, блокировка ботов
+- Модель xPDO 3 (InnoDB): ReactionType, ReactionSet, ReactionSetType, Reaction, ReactionAggregate, ReactionBan
+- Пресеты наборов `updown` (👍/👎) и `github` (👍👎❤️😂😮😢😡🎉) при установке
+- Сервисы: ReactionService, IdentityResolver, RateLimiter, BotDetector, AggregateService, TrendingCalculator, WebhookDispatcher, NotificationService, CacheService
+- События MODX: OnBeforeReaction, OnAfterReaction, OnReactionRemoved, OnReactionChanged
+- AJAX/REST API (`assets/components/reactions/api.php`): counts, react, top, trending, latest, csrf; admin CRUD типов/наборов/банов и stats
+- Безопасность API: CSRF, Origin check, nonce (replay protection), rate limit
+- Сниппеты: Reactions, ReactionsCount, TopLiked, TopRated, Trending, ReactionsSchema
+- TypeScript-виджет (Vite): оптимистичные обновления, ARIA, клавиатура
+- CLI: recount, cleanup, export, type, set, ban, stats
+- Документация: сниппеты, интеграции (pdoTools, miniShop3, Tickets, Collections, SEO), API, JS, CLI, события, webhooks
+- Тесты Pest (unit) и Vitest (frontend); GitHub Actions CI на PHP 8.2–8.4
+
+### Requirements
+- MODX Revolution 3.x
+- PHP 8.2+
