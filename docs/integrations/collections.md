@@ -4,6 +4,8 @@
 
 ## Блок реакций на странице коллекции
 
+MODX:
+
 ```
 [[!Reactions? &set=`github`]]
 ```
@@ -16,7 +18,19 @@ Fenom:
 
 ## Счётчик в списке дочерних ресурсов
 
-В Fenom-шаблоне Collections (view `row`):
+MODX (чанк строки списка):
+
+```
+<article class="collection-item">
+    <h2><a href="[[~[[+id]]]]">[[+pagetitle]]</a></h2>
+    [[!ReactionsCount?
+        &object=`[[+id]]`
+        &format=`👍 {LIKES} · 💬 {TOTAL}`
+    ]]
+</article>
+```
+
+Fenom (view `row`):
 
 ```
 <article class="collection-item">
@@ -30,7 +44,9 @@ Fenom:
 
 ## Сортировка дочерних по популярности
 
-Через pdoResources с `leftJoin` на `ReactionAggregate`:
+Через pdoResources с `leftJoin` на `ReactionAggregate`.
+
+MODX:
 
 ```
 [[!pdoResources?
@@ -43,13 +59,28 @@ Fenom:
 ]]
 ```
 
+Fenom:
+
+```
+{'!pdoResources' | snippet : [
+    'parents' => $_modx->resource.id,
+    'depth' => 1,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = \'modResource\'"}}',
+    'sortby' => 'Aggregate.likes',
+    'sortdir' => 'DESC',
+    'tpl' => '@INLINE <li><a href="[[+uri]]">[[+pagetitle]]</a> — [[!ReactionsCount? &object=`[[+id]]` &format=`{LIKES}`]]</li>',
+]}
+```
+
 ## Топ материалов коллекции
 
 Ограничьте выборку родителем через pdoResources, а не через `TopLiked` напрямую. `TopLiked` сортирует глобально по `class_key`, без фильтра по родителю.
 
 Вариант: pdoResources + sortby `Aggregate.likes` (см. выше).
 
-Глобальный топ коллекции (все ресурсы):
+Глобальный топ (все ресурсы контекста):
+
+MODX:
 
 ```
 [[!TopLiked?
@@ -60,9 +91,22 @@ Fenom:
 ]]
 ```
 
+Fenom:
+
+```
+{'!TopLiked' | snippet : [
+    'class'   => 'modResource',
+    'period'  => 'month',
+    'limit'   => 10,
+    'context' => 'web',
+]}
+```
+
 ## Шаблон коллекции с trending
 
 На странице «Популярное в разделе»:
+
+MODX:
 
 ```
 <h2>Горячие материалы</h2>
@@ -77,12 +121,35 @@ Fenom:
 ]]
 ```
 
+Fenom:
+
+```
+<h2>Горячие материалы</h2>
+{'!pdoResources' | snippet : [
+    'parents' => $_modx->resource.id,
+    'depth' => 2,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = \'modResource\'"}}',
+    'sortby' => 'Aggregate.trending_score',
+    'sortdir' => 'DESC',
+    'limit' => 6,
+    'tpl' => 'tpl.collection.trending',
+]}
+```
+
 ## Schema.org
 
-Добавьте `ReactionsSchema` в шаблон ресурса коллекции:
+Добавьте `ReactionsSchema` в шаблон ресурса коллекции.
+
+MODX:
 
 ```
 [[!ReactionsSchema]]
+```
+
+Fenom:
+
+```
+{'!ReactionsSchema' | snippet}
 ```
 
 Подробнее — в [seo.md](seo.md).

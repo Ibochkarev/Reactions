@@ -5,7 +5,10 @@ $_lang['area_reactions_security'] = 'Security';
 $_lang['area_reactions_integrations'] = 'Integrations';
 
 $_lang['setting_reactions_default_set'] = 'Default reaction set';
-$_lang['setting_reactions_default_set_desc'] = 'Key of the reaction set used when the snippet omits &set (updown or github).';
+$_lang['setting_reactions_default_set_desc'] = 'Key of the reaction set used when the snippet omits &set (updown, github or full).';
+
+$_lang['setting_reactions_full_types'] = 'Types for the full set';
+$_lang['setting_reactions_full_types_desc'] = 'Comma-separated type names enabled for set=full (e.g. like,love,fire,star). Empty = all types in the full set.';
 
 $_lang['setting_reactions_identity_strategy'] = 'Visitor identity strategy';
 $_lang['setting_reactions_identity_strategy_desc'] = 'auth_only, ip, ip_cookie, or session.';

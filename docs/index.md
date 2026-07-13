@@ -21,17 +21,26 @@ composer install
 php _build/build.php
 ```
 
-После установки пакет создаёт таблицы, пресеты типов и наборов (`updown`, `github`), сниппеты, чанки и системные настройки.
+После установки пакет создаёт таблицы, пресеты типов и наборов (`updown`, `github`, `full`), сниппеты, чанки и системные настройки.
 
 ## Быстрый старт
 
 ### 1. Подключите JS и CSS
 
-В шаблоне или через `registerClientScript`:
+В шаблоне или через `registerClientScript`.
+
+MODX:
 
 ```html
 <link rel="stylesheet" href="[[++assets_url]]components/reactions/js/web/reactions.css">
 <script src="[[++assets_url]]components/reactions/js/web/reactions.js" defer></script>
+```
+
+Fenom:
+
+```html
+<link rel="stylesheet" href="{'assets_url' | config}components/reactions/js/web/reactions.css">
+<script src="{'assets_url' | config}components/reactions/js/web/reactions.js" defer></script>
 ```
 
 ### 2. Выведите блок реакций
@@ -62,6 +71,7 @@ curl "https://example.com/assets/components/reactions/api.php?action=counts&clas
 | --- | --- | --- |
 | `updown` | 👍 `like`, 👎 `dislike` | Взаимоисключающие (`exclusive`) |
 | `github` | 👍 👎 ❤️ 😂 😮 😢 😡 🎉 | Несколько реакций одновременно |
+| `full` | `github` + 🚀👀🔥👏🤔🥳⭐🍺✨💯🙏💪😎😍😕🙌 | Расширенный набор (24 типа); подмножество через `reactions_full_types` |
 
 Собственные типы и наборы создаются через [CLI](cli.md) или [административный API](api.md#admin).
 
@@ -93,8 +103,9 @@ curl "https://example.com/assets/components/reactions/api.php?action=counts&clas
 | Ключ | По умолчанию | Описание |
 | --- | --- | --- |
 | `reactions_default_set` | `updown` | Набор реакций, если сниппет не передаёт `&set` |
+| `reactions_full_types` | *(пусто)* | Подмножество типов для `set=full` (имена через запятую). Пусто — все 24 |
 | `reactions_identity_strategy` | `ip_cookie` | Стратегия идентификации посетителя: `auth_only`, `ip`, `ip_cookie`, `session` |
-| `reactions_allow_multiple` | `Нет` | Разрешить несколько типов реакций на один объект (если набор не `exclusive`) |
+| `reactions_allow_multiple` | `Нет` | Разрешить несколько типов реакций на один объект (только если набор не `exclusive`) |
 | `reactions_rate_limit` | `10` | Максимум реакций за окно времени |
 | `reactions_rate_limit_window` | `60` | Длина окна rate limit в секундах |
 | `reactions_cache_handler` | `modx` | Обработчик кэша: `modx` или `redis` |

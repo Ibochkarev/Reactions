@@ -3,6 +3,7 @@
 namespace Reactions\Snippet;
 
 use Reactions\Api\Security;
+use Reactions\Support\TypeFilter;
 
 class ReactionsSnippet extends AbstractSnippet
 {
@@ -34,8 +35,9 @@ class ReactionsSnippet extends AbstractSnippet
             $csrf = '';
         }
 
+        $setTypes = $this->loadFilteredSetTypes($reactions, $setKey, $scriptProperties);
         $buttons = '';
-        foreach ($this->loadSetTypes($reactions, $setKey) as $type) {
+        foreach ($setTypes as $type) {
             $name = (string) $type->get('name');
             $buttons .= $this->modx->getChunk($tpl, [
                 'emoji' => (string) $type->get('emoji'),
@@ -54,6 +56,7 @@ class ReactionsSnippet extends AbstractSnippet
             'object_id' => $objectId,
             'set' => $setKey,
             'context' => $context,
+            'types' => implode(',', TypeFilter::namesFromTypes($setTypes)),
         ]);
 
         return $this->finish($output, $scriptProperties);

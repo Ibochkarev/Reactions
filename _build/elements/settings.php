@@ -6,6 +6,11 @@ return [
         'value' => 'updown',
         'area' => 'reactions_main',
     ],
+    'full_types' => [
+        'xtype' => 'textfield',
+        'value' => '',
+        'area' => 'reactions_main',
+    ],
     'identity_strategy' => [
         'xtype' => 'textfield',
         'value' => 'ip_cookie',

@@ -5,6 +5,21 @@ export interface WidgetConfig {
   set: string;
   context: string;
   csrf: string;
+  /** undefined = no data-types attr; [] = empty filter (show no buttons) */
+  types?: string[];
+}
+
+export interface ReactionsGlobalConfig {
+  api?: string;
+}
+
+declare global {
+  interface Window {
+    Reactions?: {
+      init: (root?: ParentNode) => unknown[];
+      config?: ReactionsGlobalConfig;
+    };
+  }
 }
 
 export interface CountsData {
@@ -43,19 +58,42 @@ export interface ReactionTypeDef {
   label: string;
 }
 
+const UPDOWN: ReactionTypeDef[] = [
+  { name: 'like', label: '👍' },
+  { name: 'dislike', label: '👎' },
+];
+
+const GITHUB: ReactionTypeDef[] = [
+  ...UPDOWN,
+  { name: 'love', label: '❤️' },
+  { name: 'funny', label: '😂' },
+  { name: 'wow', label: '😮' },
+  { name: 'sad', label: '😢' },
+  { name: 'angry', label: '😡' },
+  { name: 'hooray', label: '🎉' },
+];
+
+const FULL_EXTRA: ReactionTypeDef[] = [
+  { name: 'rocket', label: '🚀' },
+  { name: 'eyes', label: '👀' },
+  { name: 'fire', label: '🔥' },
+  { name: 'clap', label: '👏' },
+  { name: 'thinking', label: '🤔' },
+  { name: 'party', label: '🥳' },
+  { name: 'star', label: '⭐' },
+  { name: 'beer', label: '🍺' },
+  { name: 'sparkles', label: '✨' },
+  { name: 'hundred', label: '💯' },
+  { name: 'pray', label: '🙏' },
+  { name: 'muscle', label: '💪' },
+  { name: 'cool', label: '😎' },
+  { name: 'heart_eyes', label: '😍' },
+  { name: 'confused', label: '😕' },
+  { name: 'raised_hands', label: '🙌' },
+];
+
 export const REACTION_SETS: Record<string, ReactionTypeDef[]> = {
-  updown: [
-    { name: 'like', label: '👍' },
-    { name: 'dislike', label: '👎' },
-  ],
-  github: [
-    { name: 'like', label: '👍' },
-    { name: 'dislike', label: '👎' },
-    { name: 'love', label: '❤️' },
-    { name: 'funny', label: '😂' },
-    { name: 'wow', label: '😮' },
-    { name: 'sad', label: '😢' },
-    { name: 'angry', label: '😡' },
-    { name: 'hooray', label: '🎉' },
-  ],
+  updown: UPDOWN,
+  github: GITHUB,
+  full: [...GITHUB, ...FULL_EXTRA],
 };

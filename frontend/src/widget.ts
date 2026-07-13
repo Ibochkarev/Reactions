@@ -10,23 +10,110 @@ export interface WidgetState {
   error: string | null;
 }
 
+const REACTIONS_SCRIPT_RE = /(?:^|\/)components\/reactions\/js\/web\/reactions\.js(?:\?|$)/i;
+
+/**
+ * Resolve API URL: data-api → window.Reactions.config.api → path relative to reactions.js.
+ */
+export function resolveApiUrlFromScript(doc: Document = document): string | null {
+  const scripts = doc.querySelectorAll('script[src]');
+
+  for (const script of scripts) {
+    const src = script.getAttribute('src');
+    if (!src || !REACTIONS_SCRIPT_RE.test(src)) {
+      continue;
+    }
+
+    try {
+      const apiUrl = new URL('../../api.php', new URL(src, doc.baseURI || window.location.href));
+      if (apiUrl.origin !== window.location.origin) {
+        continue;
+      }
+
+      return apiUrl.href;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+export function resolveApiUrl(el: HTMLElement, doc: Document = document): string | null {
+  const fromAttr = el.dataset.api?.trim();
+  if (fromAttr) {
+    return fromAttr;
+  }
+
+  const fromGlobal = window.Reactions?.config?.api?.trim();
+  if (fromGlobal) {
+    return fromGlobal;
+  }
+
+  return resolveApiUrlFromScript(doc);
+}
+
 export function parseConfig(el: HTMLElement): WidgetConfig | null {
-  const api = el.dataset.api;
+  const api = resolveApiUrl(el);
   const classKey = el.dataset.classKey;
   const objectId = Number(el.dataset.objectId);
   const set = el.dataset.set ?? 'updown';
   const context = el.dataset.context ?? 'web';
   const csrf = el.dataset.csrf ?? '';
+  const types = parseTypeNamesFromElement(el);
 
   if (!api || !classKey || !Number.isFinite(objectId) || objectId <= 0) {
     return null;
   }
 
-  return { api, classKey, objectId, set, context, csrf };
+  return { api, classKey, objectId, set, context, csrf, types };
+}
+
+/**
+ * Absent attribute → undefined (use set catalog).
+ * Present (even empty) → list of names (may be []).
+ */
+export function parseTypeNamesFromElement(el: HTMLElement): string[] | undefined {
+  if (!el.hasAttribute('data-types')) {
+    return undefined;
+  }
+
+  const raw = el.getAttribute('data-types') ?? '';
+  const names: string[] = [];
+  for (const part of raw.split(',')) {
+    const name = part.trim().toLowerCase();
+    if (name === '' || names.includes(name)) {
+      continue;
+    }
+    names.push(name);
+  }
+
+  return names;
 }
 
 export function getReactionTypes(set: string): ReactionTypeDef[] {
   return REACTION_SETS[set] ?? REACTION_SETS.updown;
+}
+
+/**
+ * undefined names → catalog for set.
+ * array (including []) → intersection with set catalog, preserving names order.
+ */
+export function resolveReactionTypes(set: string, names?: string[]): ReactionTypeDef[] {
+  if (names === undefined) {
+    return getReactionTypes(set);
+  }
+
+  const byName = new Map(getReactionTypes(set).map((def) => [def.name, def]));
+  const resolved: ReactionTypeDef[] = [];
+  for (const name of names) {
+    const def = byName.get(name);
+    if (def) {
+      resolved.push(def);
+    }
+  }
+
+  return resolved;
 }
 
 export class ReactionsWidget {
@@ -39,7 +126,7 @@ export class ReactionsWidget {
   constructor(el: HTMLElement, config: WidgetConfig) {
     this.el = el;
     this.config = config;
-    this.types = getReactionTypes(config.set);
+    this.types = resolveReactionTypes(config.set, config.types);
     this.state = {
       counts: {},
       userReactions: [],

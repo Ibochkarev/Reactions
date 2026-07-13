@@ -25,6 +25,22 @@ if ($transport->xpdo) {
                 'sad' => ['emoji' => '😢', 'ordering' => 60],
                 'angry' => ['emoji' => '😡', 'ordering' => 70],
                 'hooray' => ['emoji' => '🎉', 'ordering' => 80],
+                'rocket' => ['emoji' => '🚀', 'ordering' => 90],
+                'eyes' => ['emoji' => '👀', 'ordering' => 100],
+                'fire' => ['emoji' => '🔥', 'ordering' => 110],
+                'clap' => ['emoji' => '👏', 'ordering' => 120],
+                'thinking' => ['emoji' => '🤔', 'ordering' => 130],
+                'party' => ['emoji' => '🥳', 'ordering' => 140],
+                'star' => ['emoji' => '⭐', 'ordering' => 150],
+                'beer' => ['emoji' => '🍺', 'ordering' => 160],
+                'sparkles' => ['emoji' => '✨', 'ordering' => 170],
+                'hundred' => ['emoji' => '💯', 'ordering' => 180],
+                'pray' => ['emoji' => '🙏', 'ordering' => 190],
+                'muscle' => ['emoji' => '💪', 'ordering' => 200],
+                'cool' => ['emoji' => '😎', 'ordering' => 210],
+                'heart_eyes' => ['emoji' => '😍', 'ordering' => 220],
+                'confused' => ['emoji' => '😕', 'ordering' => 230],
+                'raised_hands' => ['emoji' => '🙌', 'ordering' => 240],
             ];
 
             $typeIds = [];
@@ -53,6 +69,16 @@ if ($transport->xpdo) {
                     'title' => 'GitHub',
                     'exclusive' => false,
                     'types' => ['like', 'dislike', 'love', 'funny', 'wow', 'sad', 'angry', 'hooray'],
+                ],
+                'full' => [
+                    'title' => 'Full',
+                    'exclusive' => false,
+                    'types' => [
+                        'like', 'dislike', 'love', 'funny', 'wow', 'sad', 'angry', 'hooray',
+                        'rocket', 'eyes', 'fire', 'clap', 'thinking', 'party',
+                        'star', 'beer', 'sparkles', 'hundred', 'pray', 'muscle',
+                        'cool', 'heart_eyes', 'confused', 'raised_hands',
+                    ],
                 ],
             ];
 

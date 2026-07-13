@@ -33,17 +33,27 @@
 }
 ```
 
-## Примеры MODX
+## Примеры
 
 ### На странице ресурса
 
 В `<head>` или перед `</body>`:
 
+MODX:
+
 ```
 [[!ReactionsSchema]]
 ```
 
+Fenom:
+
+```
+{raw ('!ReactionsSchema' | snippet)}
+```
+
 ### На товаре miniShop3
+
+MODX:
 
 ```
 [[!ReactionsSchema?
@@ -52,26 +62,46 @@
 ]]
 ```
 
-## Примеры Fenom
+Fenom:
 
 ```
-{'!ReactionsSchema' | snippet}
-```
-
-Для товара:
-
-```
-{'!ReactionsSchema' | snippet : [
+{raw ('!ReactionsSchema' | snippet : [
     'class'  => 'msProduct',
-    'object' => $product.id,
-]}
+    'object' => $_modx->resource.id,
+])}
 ```
+
+### С явным контекстом
+
+MODX:
+
+```
+[[!ReactionsSchema?
+    &class=`modResource`
+    &object=`[[*id]]`
+    &context=`web`
+]]
+```
+
+Fenom:
+
+```
+{raw ('!ReactionsSchema' | snippet : [
+    'class'   => 'modResource',
+    'object'  => $_modx->resource.id,
+    'context' => 'web',
+])}
+```
+
+`{raw …}` нужен, если Fenom экранирует HTML: иначе `<script type="application/ld+json">` превратится в текст.
 
 ## Связь с основным типом Schema.org
 
 `AggregateRating` должен быть вложен в объект с `@type` (`Article`, `Product`, `BlogPosting` и т.д.). Сниппет выводит только блок рейтинга.
 
-Вариант 1: оберните в свой сниппет или шаблон:
+Вариант 1: оберните в свой сниппет или шаблон.
+
+MODX:
 
 ```html
 <script type="application/ld+json">
@@ -79,6 +109,24 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "[[*pagetitle]]",
+  "aggregateRating": {
+    "ratingValue": 4.2,
+    "ratingCount": 100,
+    "bestRating": 5,
+    "worstRating": 1
+  }
+}
+</script>
+```
+
+Fenom:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{$_modx->resource.pagetitle | escape}",
   "aggregateRating": {
     "ratingValue": 4.2,
     "ratingCount": 100,

@@ -5,7 +5,10 @@ $_lang['area_reactions_security'] = 'Безопасность';
 $_lang['area_reactions_integrations'] = 'Интеграции';
 
 $_lang['setting_reactions_default_set'] = 'Набор реакций по умолчанию';
-$_lang['setting_reactions_default_set_desc'] = 'Ключ набора, если сниппет не передаёт &set (updown или github).';
+$_lang['setting_reactions_default_set_desc'] = 'Ключ набора, если сниппет не передаёт &set (updown, github или full).';
+
+$_lang['setting_reactions_full_types'] = 'Типы набора full';
+$_lang['setting_reactions_full_types_desc'] = 'Имена типов через запятую для набора full (например like,love,fire,star). Пусто — все типы из набора.';
 
 $_lang['setting_reactions_identity_strategy'] = 'Стратегия идентификации';
 $_lang['setting_reactions_identity_strategy_desc'] = 'auth_only, ip, ip_cookie или session.';

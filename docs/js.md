@@ -9,9 +9,18 @@
 
 ## Подключение
 
+MODX:
+
 ```html
 <link rel="stylesheet" href="[[++assets_url]]components/reactions/js/web/reactions.css">
 <script src="[[++assets_url]]components/reactions/js/web/reactions.js" defer></script>
+```
+
+Fenom:
+
+```html
+<link rel="stylesheet" href="{'assets_url' | config}components/reactions/js/web/reactions.css">
+<script src="{'assets_url' | config}components/reactions/js/web/reactions.js" defer></script>
 ```
 
 Сниппет `Reactions` выводит готовую разметку. Виджет инициализируется автоматически при загрузке DOM.
@@ -24,28 +33,63 @@
 
 | Атрибут | Обязательный | Описание |
 | --- | --- | --- |
-| `data-api` | да | URL API (`/assets/components/reactions/api.php`) |
 | `data-class-key` | да | `class_key` объекта (`modResource`, `msProduct`…) |
 | `data-object-id` | да | ID объекта (целое число > 0) |
 | `data-set` | нет | Ключ набора, по умолчанию `updown` |
 | `data-context` | нет | Контекст, по умолчанию `web` |
 | `data-csrf` | нет | CSRF-токен; если пустой, виджет запросит сам |
+| `data-api` | нет* | URL API. В SSR сниппета заполняется из `[[+api_url]]`. Без атрибута: `Reactions.config.api`, иначе путь от `reactions.js` (same-origin) |
+| `data-types` | нет | Имена типов через запятую. Атрибут отсутствует → каталог `data-set`. Пустая строка → 0 кнопок. Лишние имена вне набора игнорируются |
 
-Пример разметки:
+URL API берётся в таком порядке:
+
+1. `data-api` на элементе (сниппет ставит `[[+api_url]]`)
+2. `window.Reactions.config.api`
+3. путь от same-origin `<script src="…/components/reactions/js/web/reactions.js">` → `…/components/reactions/api.php`
+
+Сниппет `Reactions` заполняет `data-types` фактически показанными типами (после фильтра `types` / `reactions_full_types`). Пустой результат фильтра → `data-types=""`, виджет не подставляет полный набор.
+Пример разметки (ручной чанк / AJAX):
+
+MODX:
 
 ```html
 <div
     class="reactions-widget"
-    data-api="/assets/components/reactions/api.php"
+    data-api="[[++assets_url]]components/reactions/api.php"
     data-class-key="modResource"
-    data-object-id="42"
-    data-set="github"
-    data-context="web"
-    data-csrf=""
+    data-object-id="[[*id]]"
+    data-set="full"
+    data-types="like,love,fire,star"
+    data-context="[[*context_key]]"
 ></div>
 ```
 
-Сниппет `Reactions` заполняет эти поля через чанк `tpl.Reactions.outer`. При кастомном чанке сохраните класс `reactions-widget` и корректные data-атрибуты.
+Fenom:
+
+```html
+<div
+    class="reactions-widget"
+    data-api="{'assets_url' | config}components/reactions/api.php"
+    data-class-key="modResource"
+    data-object-id="{$_modx->resource.id}"
+    data-set="full"
+    data-types="like,love,fire,star"
+    data-context="{$_modx->context.key}"
+></div>
+```
+
+Override (CDN или нестандартный путь к `api.php`):
+
+```html
+<script>
+  window.Reactions = window.Reactions || {};
+  window.Reactions.config = { api: '[[++assets_url]]components/reactions/api.php' };
+</script>
+```
+
+или на конкретном виджете: `data-api="[[++assets_url]]components/reactions/api.php"`.
+
+Сниппет `Reactions` заполняет обязательные data-атрибуты через чанк `tpl.Reactions.outer`. При кастомном чанке сохраните класс `reactions-widget` и корректные data-атрибуты; `data-api` не обязателен.
 
 ## Ручная инициализация
 
@@ -67,7 +111,7 @@ Reactions.init(container);
 1. Парсинг data-атрибутов.
 2. Запрос CSRF (`GET ?action=csrf`), если токен не передан.
 3. Загрузка счётчиков (`GET ?action=counts`).
-4. Рендер кнопок по набору (`updown` или `github`).
+4. Рендер кнопок по набору (`updown`, `github` или `full`).
 5. По клику: optimistic UI → `POST ?action=react` или `DELETE ?action=react`.
 6. При ошибке: откат состояния, обновление CSRF.
 
@@ -78,7 +122,8 @@ Reactions.init(container);
 | Набор | Типы |
 | --- | --- |
 | `updown` | like 👍, dislike 👎 |
-| `github` | like, dislike, love, funny, wow, sad, angry, hooray |
+| `github` | like 👍, dislike 👎, love ❤️, funny 😂, wow 😮, sad 😢, angry 😡, hooray 🎉 |
+| `full` | `github` + rocket 🚀, eyes 👀, fire 🔥, clap 👏, thinking 🤔, party 🥳, star ⭐, beer 🍺, sparkles ✨, hundred 💯, pray 🙏, muscle 💪, cool 😎, heart_eyes 😍, confused 😕, raised_hands 🙌 |
 
 Для кастомных наборов серверная валидация работает через API, но JS отрисует кнопки только если набор совпадает с `REACTION_SETS` в бандле. Для полностью кастомных наборов используйте серверный рендер через сниппет `Reactions` без JS или расширьте фронтенд.
 

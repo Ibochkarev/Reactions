@@ -1,6 +1,7 @@
 <?php
 
 $_lang['prop_reactions_set'] = 'Ключ набора реакций';
+$_lang['prop_reactions_types'] = 'Подмножество типов (имена через запятую)';
 $_lang['prop_reactions_class'] = 'class_key объекта';
 $_lang['prop_reactions_object'] = 'ID объекта';
 $_lang['prop_reactions_tpl'] = 'Чанк одной кнопки реакции';

@@ -52,6 +52,7 @@ class Reactions
             'jsUrl' => $assetsUrl . 'js/',
             'cssUrl' => $assetsUrl . 'css/',
             'defaultSet' => (string) $modx->getOption('reactions_default_set', null, 'updown'),
+            'fullTypes' => (string) $modx->getOption('reactions_full_types', null, ''),
             'identityStrategy' => (string) $modx->getOption('reactions_identity_strategy', null, 'ip_cookie'),
             'allowMultiple' => (bool) $modx->getOption('reactions_allow_multiple', null, false),
             'rateLimit' => (int) $modx->getOption('reactions_rate_limit', null, 10),

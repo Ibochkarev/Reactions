@@ -1,6 +1,7 @@
 <?php
 
 $_lang['prop_reactions_set'] = 'Reaction set key';
+$_lang['prop_reactions_types'] = 'Subset of type names (comma-separated)';
 $_lang['prop_reactions_class'] = 'Object class key';
 $_lang['prop_reactions_object'] = 'Object ID';
 $_lang['prop_reactions_tpl'] = 'Chunk for a single reaction button';

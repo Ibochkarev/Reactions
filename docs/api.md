@@ -1,24 +1,42 @@
 # REST API
 
-Базовый URL: `https://ваш-сайт/assets/components/reactions/api.php`
-
-Маршрутизация через query-параметр `action` или `PATH_INFO`:
+Базовый URL:
 
 ```
-api.php?action=counts
-api.php/counts
+https://ваш-сайт/assets/components/reactions/api.php
 ```
 
-Все ответы — JSON с полем `success` (`true` / `false`).
+Файл точки входа: `assets/components/reactions/api.php` (загружает bootstrap и вызывает `Reactions\Api\Router`).
+
+## Маршрутизация
+
+Действие задаётся параметром `action` или `PATH_INFO`:
+
+```
+GET  /assets/components/reactions/api.php?action=counts
+GET  /assets/components/reactions/api.php/counts
+POST /assets/components/reactions/api.php?action=react
+GET  /assets/components/reactions/api.php?action=admin/types
+```
+
+Вложенные admin-ресурсы: `action=admin/types`, `admin/sets`, `admin/bans`, `admin/stats`.
+
+Метод HTTP берётся из `REQUEST_METHOD`. Для клиентов без DELETE можно эмулировать:
+
+- `POST` + поле тела `_method=DELETE`, или
+- `POST` + `$_POST['_method']=DELETE`.
 
 ## Формат ответов
 
-Успех:
+Все ответы — JSON (`JSON_UNESCAPED_UNICODE`). Поле `success` всегда присутствует.
+
+Успех (поля верхнего уровня зависят от endpoint):
 
 ```json
 {
   "success": true,
-  "data": { ... }
+  "data": { },
+  "csrf": "…"
 }
 ```
 
@@ -27,21 +45,50 @@ api.php/counts
 ```json
 {
   "success": false,
-  "error": "Описание ошибки",
+  "error": "Человекочитаемое описание",
   "code": "error_code"
 }
 ```
 
-Коды ошибок: `validation_error`, `not_found`, `method_not_allowed`, `forbidden`, `rate_limit`, `auth_required`, `internal_error`.
+### Коды ошибок и HTTP-статусы
+
+| `code` | HTTP | Когда |
+| --- | --- | --- |
+| `validation_error` | 400 | Нет обязательных полей (`class_key`, `object_id`, `type`…) |
+| `bad_request` | 400 | Пустой `action` |
+| `not_found` | 404 | Неизвестный action / объект / тип / набор |
+| `method_not_allowed` | 405 | Неверный HTTP-метод для endpoint |
+| `forbidden` | 403 | CSRF/Origin/nonce, бан, бот, allowlist class_key, тип вне набора/`full_types`, отмена плагином |
+| `auth_required` | 401 | Admin без `reactions_manage`; стратегия `auth_only` для гостя |
+| `rate_limit` | 429 | Превышен `reactions_rate_limit` |
+| `internal_error` | 500 | Непойманное исключение (детали в `error.log`) |
+| `save_failed` | 500 | Admin: не удалось сохранить объект |
+
+---
+
+## Обзор публичных endpoint
+
+| Method | action | Описание | CSRF |
+| --- | --- | --- | --- |
+| GET | `csrf` | Выдать CSRF-токен | нет |
+| GET | `counts` | Счётчики + реакции текущего посетителя | нет |
+| POST | `react` | Поставить / переключить реакцию | да |
+| DELETE | `react` | Снять реакцию | да |
+| GET | `top` | Топ по likes / rating / total | нет |
+| GET | `trending` | Топ по `trending_score` | нет |
+| GET | `latest` | Лента последних реакций | нет |
+
+GET-эндпоинты кэшируются на стороне CDN только если вы сами так настроите. Ответ `counts` зависит от cookie/сессии (`user_reaction`) — **не** кэшируйте его публично.
 
 ---
 
 ## GET csrf
 
-Получить CSRF-токен для POST/DELETE запросов.
+Выдаёт токен, привязанный к PHP-сессии (`$_SESSION['reactions_csrf']`). Новый вызов перезаписывает предыдущий токен.
 
 ```bash
-curl -c cookies.txt "https://example.com/assets/components/reactions/api.php?action=csrf"
+curl -c cookies.txt \
+  "https://example.com/assets/components/reactions/api.php?action=csrf"
 ```
 
 Ответ:
@@ -49,23 +96,25 @@ curl -c cookies.txt "https://example.com/assets/components/reactions/api.php?act
 ```json
 {
   "success": true,
-  "csrf": "a1b2c3d4..."
+  "csrf": "a1b2c3d4e5f6…"
 }
 ```
 
-Токен привязан к PHP-сессии. Передавайте cookie в последующих запросах (`-b cookies.txt`).
+Дальше передавайте cookie сессии (`-b cookies.txt`) во все запросы, которым нужен тот же CSRF.
+
+JS-виджет делает этот запрос сам, если `data-csrf` пустой.
 
 ---
 
 ## GET counts
 
-Счётчики реакций и текущий выбор посетителя.
+Счётчики по объекту и список типов реакций текущего посетителя (по fingerprint / user_id).
 
 | Параметр | Обязательный | Описание |
 | --- | --- | --- |
-| `class_key` | да | `class_key` объекта |
-| `object_id` | да | ID объекта |
-| `context` | нет | Контекст, по умолчанию `web` |
+| `class_key` | да | Класс объекта (`modResource`, `msProduct`, `TicketComment`…) |
+| `object_id` | да | ID объекта (> 0) |
+| `context` | нет | Контекст; по умолчанию `web` |
 
 ```bash
 curl -b cookies.txt \
@@ -92,23 +141,41 @@ curl -b cookies.txt \
 }
 ```
 
+- `counts` — ассоциативный массив имя типа → число.
+- `total` — сумма всех типов в агрегате.
+- `user_reaction` — массив имён типов, которые уже стоят у текущего посетителя (может быть пустым или содержать несколько имён, если разрешён multi).
+
 ---
 
 ## POST react
 
-Поставить реакцию.
+Поставить реакцию. Повторный POST того же типа обычно **снимает** её (toggle). В exclusive-режиме (`updown` или `!allow_multiple`) другой тип заменяет предыдущий (`action=changed`).
 
-Тело запроса (JSON):
+### Тело (JSON)
 
 | Поле | Обязательное | Описание |
 | --- | --- | --- |
-| `csrf` | да | CSRF-токен |
-| `nonce` | да | Одноразовый nonce (32 hex-символа) |
-| `class_key` | да | `class_key` объекта |
-| `object_id` | да | ID объекта |
-| `type` | да | Имя типа (`like`, `love`…) |
-| `context` | нет | Контекст, по умолчанию `web` |
-| `set` | нет | Ключ набора для проверки типа |
+| `csrf` | да | Токен из `GET csrf` |
+| `nonce` | да | Одноразовая строка (рекомендуется 32 hex); TTL 300 с, не более ~50 активных в сессии |
+| `class_key` | да | Класс объекта |
+| `object_id` | да | ID |
+| `type` | да | Имя типа (`like`, `love`, `fire`…) |
+| `context` | нет | По умолчанию `web` |
+| `set` | нет | Ключ набора для валидации типа; пусто → `reactions_default_set` |
+
+### Проверки сервера (порядок)
+
+1. Origin / Referer совпадает с host из `site_url` (fail-closed: без заголовков — 403).
+2. CSRF совпадает с сессией.
+3. Nonce ещё не использован.
+4. Identity + антибот + бан + rate limit.
+5. `class_key` в `reactions_allowed_classes` (если список не пуст).
+6. Объект существует в xPDO.
+7. Тип активен; входит в набор `set`.
+8. Для `set=full`: тип в `reactions_full_types`, если настройка не пуста.
+9. `OnBeforeReaction` (можно отменить).
+
+### Пример
 
 ```bash
 CSRF=$(curl -s -c cookies.txt -b cookies.txt \
@@ -147,13 +214,27 @@ curl -s -b cookies.txt -c cookies.txt \
 }
 ```
 
-Значения `action`: `added`, `removed`, `changed`.
+| `action` | Значение |
+| --- | --- |
+| `added` | Новая реакция |
+| `removed` | Повторный клик / снятие |
+| `changed` | Смена типа в exclusive-режиме |
+
+### Набор `full` и подмножество типов
+
+```json
+{ "set": "full", "type": "beer", ... }
+```
+
+Если `reactions_full_types=like,love,fire` и клиент шлёт `type=beer` → `403 forbidden`, даже если тип есть в БД-наборе `full`.
+
+Параметр сниппета `&types=` сужает **только UI** (кнопки / `data-types`). API для `set=full` дополнительно режет по `reactions_full_types`. Тип вне UI, но разрешённый API, всё ещё можно POST-нуть вручную — для жёсткого запрета используйте `OnBeforeReaction` или сузьте набор в админке/CLI.
 
 ---
 
 ## DELETE react
 
-Снять реакцию. Тело запроса — те же поля, что у POST.
+Снять указанный тип. Тело — те же поля, что у POST (`csrf`, `nonce`, `class_key`, `object_id`, `type`, `context`, `set`).
 
 ```bash
 curl -s -b cookies.txt \
@@ -171,19 +252,21 @@ curl -s -b cookies.txt \
   }"
 ```
 
+В ответе `action` обычно `removed`. После снятия тоже вызываются события, пересчёт агрегата и (при включении) webhook; уведомление автору для DELETE не шлётся.
+
 ---
 
 ## GET top
 
-Топ объектов по метрике.
+Топ объектов по агрегатам (или пересчёт за период по сырым реакциям, если `period` ≠ `all`).
 
 | Параметр | По умолчанию | Описание |
 | --- | --- | --- |
-| `class_key` | `modResource` | `class_key` объектов |
+| `class_key` | `modResource` | Класс объектов |
 | `sort` | `likes` | `likes`, `rating`, `total` |
 | `period` | `all` | `day`, `week`, `month`, `year`, `all` |
-| `context` | *(пусто)* | Фильтр по контексту |
-| `limit` | `20` | Лимит (1–100) |
+| `context` | *(пусто)* | Фильтр по контексту; пусто — все |
+| `limit` | `20` | 1–100 |
 | `offset` | `0` | Смещение |
 
 ```bash
@@ -216,34 +299,38 @@ curl "https://example.com/assets/components/reactions/api.php?action=top&class_k
 }
 ```
 
+`data.total` здесь — число элементов в текущей странице выборки (не общий count по таблице).
+
 ---
 
 ## GET trending
 
-Горячие материалы по `trending_score`.
+Сортировка по `trending_score` (формула Reddit hot). Параметр `period` для trending фактически не меняет окно — используется актуальный score в агрегате.
 
 | Параметр | По умолчанию | Описание |
 | --- | --- | --- |
-| `class_key` | `modResource` | `class_key` объектов |
-| `context` | *(пусто)* | Фильтр по контексту |
-| `limit` | `20` | Лимит (1–100) |
+| `class_key` | `modResource` | Класс |
+| `context` | *(пусто)* | Фильтр |
+| `limit` | `20` | 1–100 |
 | `offset` | `0` | Смещение |
 
 ```bash
-curl "https://example.com/assets/components/reactions/api.php?action=trending&class_key=modResource&limit=5"
+curl "https://example.com/assets/components/reactions/api.php?action=trending&class_key=msProduct&limit=5"
 ```
+
+Структура ответа как у `top` (список items с метриками).
 
 ---
 
 ## GET latest
 
-Последние реакции (лента активности).
+Лента последних реакций (сырые записи, не агрегаты). Поле `user_id` в публичный ответ **не** отдаётся.
 
 | Параметр | Описание |
 | --- | --- |
-| `class_key` | Фильтр по классу (опционально) |
-| `context` | Фильтр по контексту (опционально) |
-| `limit` | Лимит (1–100), по умолчанию 20 |
+| `class_key` | Опциональный фильтр |
+| `context` | Опциональный фильтр |
+| `limit` | 1–100, по умолчанию 20 |
 | `offset` | Смещение |
 
 ```bash
@@ -264,7 +351,6 @@ curl "https://example.com/assets/components/reactions/api.php?action=latest&clas
         "context": "web",
         "type": "like",
         "emoji": "👍",
-        "user_id": 3,
         "created_at": 1710000000
       }
     ],
@@ -275,41 +361,77 @@ curl "https://example.com/assets/components/reactions/api.php?action=latest&clas
 }
 ```
 
+`created_at` — Unix timestamp. `total` — размер текущей страницы.
+
 ---
 
 ## Admin API {#admin}
 
-Требует авторизации в менеджере MODX или политики `reactions_manage`.
+### Доступ
 
-Базовый путь: `action=admin/<resource>`
+Требуется авторизованный пользователь менеджера (или фронт с той же сессией) с политикой **`reactions_manage`**.
+
+Без права → `401` / `auth_required`.
+
+Мутации admin (POST/DELETE) дополнительно требуют **Origin + CSRF + nonce**, как `react` (см. `guardMutation`).
+
+### Ресурсы
+
+| Method | action | Описание |
+| --- | --- | --- |
+| GET/POST/DELETE | `admin/types` | Типы реакций |
+| GET/POST/DELETE | `admin/sets` | Наборы и привязка типов |
+| GET/POST/DELETE | `admin/bans` | Баны IP / user |
+| GET | `admin/stats` | Сводка |
 
 ### GET admin/types
-
-Список типов реакций.
 
 ```bash
 curl -b mgr-cookies.txt \
   "https://example.com/assets/components/reactions/api.php?action=admin/types"
 ```
 
-### POST admin/types
-
-Создать или обновить тип.
-
-```bash
-curl -b mgr-cookies.txt \
-  -X POST "https://example.com/assets/components/reactions/api.php?action=admin/types" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"favorite","emoji":"⭐","ordering":90,"active":true}'
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "name": "like",
+        "emoji": "👍",
+        "icon": null,
+        "ordering": 10,
+        "active": true
+      }
+    ]
+  }
+}
 ```
 
-Обновление по `id`:
+### POST admin/types
+
+Создать или обновить. Поля: `id` (для update), `name`, `emoji`, `icon`, `ordering`, `active`.
 
 ```bash
 curl -b mgr-cookies.txt \
   -X POST "https://example.com/assets/components/reactions/api.php?action=admin/types" \
   -H "Content-Type: application/json" \
-  -d '{"id":9,"emoji":"🌟","active":false}'
+  -H "Origin: https://example.com" \
+  -d '{
+    "csrf": "'"$CSRF"'",
+    "nonce": "'"$NONCE"'",
+    "name": "favorite",
+    "emoji": "⭐",
+    "ordering": 90,
+    "active": true
+  }'
+```
+
+Обновление:
+
+```json
+{ "id": 9, "emoji": "🌟", "active": false, "csrf": "…", "nonce": "…" }
 ```
 
 ### DELETE admin/types
@@ -318,27 +440,28 @@ curl -b mgr-cookies.txt \
 curl -b mgr-cookies.txt \
   -X DELETE "https://example.com/assets/components/reactions/api.php?action=admin/types" \
   -H "Content-Type: application/json" \
-  -d '{"id":9}'
+  -H "Origin: https://example.com" \
+  -d '{"id":9,"csrf":"…","nonce":"…"}'
 ```
+
+`id` можно передать и query-параметром.
 
 ### GET admin/sets
 
 Список наборов с привязанными типами.
 
-```bash
-curl -b mgr-cookies.txt \
-  "https://example.com/assets/components/reactions/api.php?action=admin/sets"
-```
-
 ### POST admin/sets
 
-Создать или обновить набор. Поле `types` — массив имён или ID типов.
+Поля: `id`, `key`, `title`, `exclusive`, `active`, `types` (массив имён или ID).
 
 ```bash
 curl -b mgr-cookies.txt \
   -X POST "https://example.com/assets/components/reactions/api.php?action=admin/sets" \
   -H "Content-Type: application/json" \
+  -H "Origin: https://example.com" \
   -d '{
+    "csrf": "'"$CSRF"'",
+    "nonce": "'"$NONCE"'",
     "key": "social",
     "title": "Social",
     "exclusive": false,
@@ -347,63 +470,40 @@ curl -b mgr-cookies.txt \
   }'
 ```
 
+`exclusive=true` — взаимоисключающие типы (как `updown`). Для multi на фронте всё равно нужен `reactions_allow_multiple=Да`.
+
 ### DELETE admin/sets
 
-```bash
-curl -b mgr-cookies.txt \
-  -X DELETE "https://example.com/assets/components/reactions/api.php?action=admin/sets" \
-  -H "Content-Type: application/json" \
-  -d '{"id":3}'
-```
+Тело: `{ "id": 3, "csrf": "…", "nonce": "…" }`.
 
-### GET admin/bans
+### GET / POST / DELETE admin/bans
 
-Список банов.
-
-```bash
-curl -b mgr-cookies.txt \
-  "https://example.com/assets/components/reactions/api.php?action=admin/bans"
-```
-
-### POST admin/bans
-
-Добавить бан. IP хешируется на сервере.
+Бан по IP (хешируется на сервере) или `user_id`.
 
 ```bash
 curl -b mgr-cookies.txt \
   -X POST "https://example.com/assets/components/reactions/api.php?action=admin/bans" \
   -H "Content-Type: application/json" \
-  -d '{"ip":"203.0.113.10","reason":"spam","expires_at":1711000000}'
+  -H "Origin: https://example.com" \
+  -d '{
+    "csrf": "'"$CSRF"'",
+    "nonce": "'"$NONCE"'",
+    "ip": "203.0.113.10",
+    "reason": "spam",
+    "expires_at": 1711000000
+  }'
 ```
 
-Или по `user_id`:
+Или: `{ "user_id": 42, "reason": "abuse", "csrf": "…", "nonce": "…" }`.
 
-```bash
-curl -b mgr-cookies.txt \
-  -X POST "https://example.com/assets/components/reactions/api.php?action=admin/bans" \
-  -H "Content-Type: application/json" \
-  -d '{"user_id":42,"reason":"abuse"}'
-```
-
-### DELETE admin/bans
-
-```bash
-curl -b mgr-cookies.txt \
-  -X DELETE "https://example.com/assets/components/reactions/api.php?action=admin/bans" \
-  -H "Content-Type: application/json" \
-  -d '{"id":1}'
-```
+`expires_at` — Unix timestamp; можно опустить для бессрочного бана.
 
 ### GET admin/stats
-
-Сводная статистика.
 
 ```bash
 curl -b mgr-cookies.txt \
   "https://example.com/assets/components/reactions/api.php?action=admin/stats"
 ```
-
-Ответ:
 
 ```json
 {
@@ -416,22 +516,47 @@ curl -b mgr-cookies.txt \
       "bans": 2,
       "today": 45
     },
-    "top_liked": [ ... ],
-    "top_trending": [ ... ]
+    "top_liked": [
+      {
+        "class_key": "modResource",
+        "object_id": 12,
+        "context": "web",
+        "likes": 90,
+        "total": 100,
+        "trending_score": 1.5
+      }
+    ],
+    "top_trending": [ ]
   }
 }
 ```
+
+`today` — реакции с `created_at` от начала текущих суток сервера. Топы — до 10 строк.
 
 ---
 
 ## Безопасность
 
-| Механизм | Описание |
+| Механизм | Детали |
 | --- | --- |
-| CSRF | Обязателен для POST/DELETE |
-| Nonce | Одноразовый, TTL 300 секунд |
-| Origin check | `Origin` / `Referer` должен совпадать с `site_url` |
-| Rate limit | Настраивается через `reactions_rate_limit` |
-| Bot detection | Блокировка краулеров через `reactions_block_bots` |
+| CSRF | Сессионный токен; обязателен для POST/DELETE (публичный `react` и admin-мутации) |
+| Nonce | Одноразовый, TTL 300 с; защита от replay |
+| Origin | Сравнение host `Origin` или `Referer` с host `site_url`; без заголовков — отказ |
+| Rate limit | `reactions_rate_limit` / `reactions_rate_limit_window` на fingerprint |
+| Боты | `reactions_block_bots` + детектор User-Agent |
+| Allowlist | `reactions_allowed_classes` |
+| Баны | Таблица `ReactionBan` по IP-hash / user_id |
+| Права | Admin только с `reactions_manage` |
 
-Запросы с `credentials: include` (как в JS-виджете) отправляют session cookie автоматически.
+Запросы виджета идут с `credentials: 'same-origin'` — cookie сессии уходят автоматически.
+
+Для CDN-хостинга `reactions.js` задайте API явно (`data-api` или `window.Reactions.config.api` на том же origin, что и сайт).
+
+---
+
+## Связанные документы
+
+- [JS-виджет](js.md) — как клиент вызывает API
+- [События](events.md) — хуки вокруг `react` / `unreact`
+- [Webhooks](webhooks.md) — исходящие HTTP после изменения
+- [CLI](cli.md) — то же администрирование без HTTP

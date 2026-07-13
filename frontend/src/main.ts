@@ -1,14 +1,6 @@
 import './widget.css';
 import { initWidgets } from './widget';
 
-declare global {
-  interface Window {
-    Reactions?: {
-      init: typeof initWidgets;
-    };
-  }
-}
-
 function autoInit(): void {
   initWidgets(document);
 }
@@ -19,7 +11,10 @@ if (document.readyState === 'loading') {
   autoInit();
 }
 
-window.Reactions = { init: initWidgets };
+window.Reactions = {
+  init: initWidgets,
+  config: window.Reactions?.config,
+};
 
 export { initWidgets, mountWidget } from './widget';
-export type { WidgetConfig, CountsData, ReactionData } from './types';
+export type { WidgetConfig, CountsData, ReactionData, ReactionsGlobalConfig } from './types';

@@ -6,6 +6,7 @@
     data-object-id="[[+object_id]]"
     data-set="[[+set]]"
     data-context="[[+context]]"
+    data-types="[[+types]]"
 >
     <div class="reactions-widget__buttons" role="group" aria-label="Reactions">
         [[+output]]

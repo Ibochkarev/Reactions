@@ -14,6 +14,7 @@ use Reactions\Model\ReactionSet;
 use Reactions\Model\ReactionSetType;
 use Reactions\Model\ReactionType;
 use Reactions\Reactions;
+use Reactions\Support\TypeFilter;
 
 class ReactionService
 {
@@ -132,6 +133,20 @@ class ReactionService
             'type_id' => (int) $type->get('id'),
         ]);
         if (!$link) {
+            throw new ReactionNotAllowed($this->reactions->modx->lexicon('reactions_err_forbidden'));
+        }
+
+        $allow = TypeFilter::resolveAllowList(
+            (string) $set->get('key'),
+            '',
+            (string) $this->reactions->getOption('fullTypes', ''),
+        );
+        if ($allow === null) {
+            return;
+        }
+
+        $name = strtolower((string) $type->get('name'));
+        if (!in_array($name, $allow, true)) {
             throw new ReactionNotAllowed($this->reactions->modx->lexicon('reactions_err_forbidden'));
         }
     }

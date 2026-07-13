@@ -9,6 +9,10 @@ return [
                 'type' => 'textfield',
                 'value' => '',
             ],
+            'types' => [
+                'type' => 'textfield',
+                'value' => '',
+            ],
             'class' => [
                 'type' => 'textfield',
                 'value' => 'modResource',

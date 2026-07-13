@@ -8,6 +8,7 @@ use Reactions\Model\ReactionSet;
 use Reactions\Model\ReactionSetType;
 use Reactions\Model\ReactionType;
 use Reactions\Reactions;
+use Reactions\Support\TypeFilter;
 
 trait SnippetSupport
 {
@@ -63,6 +64,23 @@ trait SnippetSupport
         }
 
         return $types;
+    }
+
+    /**
+     * @param array<string, mixed> $scriptProperties
+     *
+     * @return list<ReactionType>
+     */
+    protected function loadFilteredSetTypes(Reactions $reactions, string $setKey, array $scriptProperties): array
+    {
+        $types = $this->loadSetTypes($reactions, $setKey);
+        $allow = TypeFilter::resolveAllowList(
+            $setKey,
+            (string) ($scriptProperties['types'] ?? ''),
+            (string) $reactions->getOption('fullTypes', ''),
+        );
+
+        return TypeFilter::filterTypes($types, $allow);
     }
 
     /**

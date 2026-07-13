@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from './api';
-import { ReactionsWidget, getReactionTypes, parseConfig } from './widget';
+import {
+  ReactionsWidget,
+  getReactionTypes,
+  parseConfig,
+  resolveApiUrl,
+  resolveApiUrlFromScript,
+  resolveReactionTypes,
+} from './widget';
 
 vi.mock('./api', () => ({
   fetchCounts: vi.fn(),
@@ -12,9 +19,15 @@ vi.mock('./api', () => ({
 
 const mockedApi = vi.mocked(api);
 
-function createHost(attrs: Record<string, string> = {}): HTMLElement {
+function appendReactionsScript(src = '/assets/components/reactions/js/web/reactions.js'): HTMLScriptElement {
+  const script = document.createElement('script');
+  script.src = src;
+  document.head.appendChild(script);
+  return script;
+}
+
+function createHost(attrs: Record<string, string | null> = {}): HTMLElement {
   const defaults: Record<string, string> = {
-    'data-api': '/assets/components/reactions/api.php',
     'data-class-key': 'modResource',
     'data-object-id': '42',
     'data-set': 'updown',
@@ -22,10 +35,14 @@ function createHost(attrs: Record<string, string> = {}): HTMLElement {
     'data-csrf': 'csrf-token',
   };
 
+  const merged: Record<string, string | null> = { ...defaults, ...attrs };
   const el = document.createElement('div');
   el.className = 'reactions-widget';
 
-  for (const [key, value] of Object.entries({ ...defaults, ...attrs })) {
+  for (const [key, value] of Object.entries(merged)) {
+    if (value === null) {
+      continue;
+    }
     el.setAttribute(key, value);
   }
 
@@ -33,30 +50,101 @@ function createHost(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
+describe('resolveApiUrl', () => {
+  beforeEach(() => {
+    document.head.innerHTML = '';
+    document.body.innerHTML = '';
+    if (window.Reactions) {
+      delete window.Reactions.config;
+    }
+  });
+
+  it('resolves api.php relative to reactions.js script src', () => {
+    appendReactionsScript('/assets/components/reactions/js/web/reactions.js');
+    const resolved = resolveApiUrlFromScript();
+    expect(resolved).toBe(new URL('/assets/components/reactions/api.php', window.location.href).href);
+  });
+
+  it('prefers data-api over script and global config', () => {
+    appendReactionsScript();
+    window.Reactions = { init: () => [], config: { api: '/from-global' } };
+    const el = createHost({ 'data-api': '/from-attr' });
+    expect(resolveApiUrl(el)).toBe('/from-attr');
+  });
+
+  it('uses window.Reactions.config.api when data-api is absent', () => {
+    window.Reactions = { init: () => [], config: { api: '/from-global' } };
+    const el = createHost();
+    expect(resolveApiUrl(el)).toBe('/from-global');
+  });
+});
+
 describe('parseConfig', () => {
-  it('reads data attributes from host element', () => {
+  beforeEach(() => {
+    document.head.innerHTML = '';
+    document.body.innerHTML = '';
+    if (window.Reactions) {
+      delete window.Reactions.config;
+    }
+  });
+
+  it('reads data attributes and resolves api from script', () => {
+    appendReactionsScript();
     const el = createHost();
     const config = parseConfig(el);
 
     expect(config).toEqual({
-      api: '/assets/components/reactions/api.php',
+      api: new URL('/assets/components/reactions/api.php', window.location.href).href,
       classKey: 'modResource',
       objectId: 42,
       set: 'updown',
       context: 'web',
       csrf: 'csrf-token',
+      types: undefined,
     });
+  });
+
+  it('parses data-types into config', () => {
+    appendReactionsScript();
+    const el = createHost({ 'data-types': 'like, fire, star' });
+    const config = parseConfig(el);
+
+    expect(config?.types).toEqual(['like', 'fire', 'star']);
+  });
+
+  it('keeps empty data-types as empty list', () => {
+    appendReactionsScript();
+    const el = createHost({ 'data-types': '' });
+    const config = parseConfig(el);
+
+    expect(config?.types).toEqual([]);
+  });
+
+  it('uses data-api when provided', () => {
+    const el = createHost({ 'data-api': '/assets/components/reactions/api.php' });
+    const config = parseConfig(el);
+
+    expect(config?.api).toBe('/assets/components/reactions/api.php');
   });
 
   it('returns null when required attributes are missing', () => {
     const el = document.createElement('div');
     expect(parseConfig(el)).toBeNull();
   });
+
+  it('returns null when api cannot be resolved', () => {
+    const el = createHost();
+    expect(parseConfig(el)).toBeNull();
+  });
 });
 
 describe('ReactionsWidget', () => {
   beforeEach(() => {
+    document.head.innerHTML = '';
     document.body.innerHTML = '';
+    if (window.Reactions) {
+      delete window.Reactions.config;
+    }
     vi.clearAllMocks();
 
     mockedApi.fetchCounts.mockResolvedValue({
@@ -70,6 +158,7 @@ describe('ReactionsWidget', () => {
   });
 
   it('renders reaction buttons with counts and aria attributes', async () => {
+    appendReactionsScript();
     const el = createHost();
     const config = parseConfig(el)!;
     const widget = new ReactionsWidget(el, config);
@@ -101,6 +190,7 @@ describe('ReactionsWidget', () => {
       type: 'dislike',
     });
 
+    appendReactionsScript();
     const el = createHost();
     const config = parseConfig(el)!;
     const widget = new ReactionsWidget(el, config);
@@ -127,6 +217,7 @@ describe('ReactionsWidget', () => {
   it('reverts optimistic update on API error', async () => {
     mockedApi.unreact.mockRejectedValue(new Error('Rate limit exceeded'));
 
+    appendReactionsScript();
     const el = createHost();
     const config = parseConfig(el)!;
     const widget = new ReactionsWidget(el, config);
@@ -139,8 +230,36 @@ describe('ReactionsWidget', () => {
     expect(el.querySelector('[data-type="like"] .reactions-widget__count')?.textContent).toBe('3');
   });
 
-  it('uses github set types when configured', () => {
+  it('uses github and full set types when configured', () => {
     expect(getReactionTypes('github')).toHaveLength(8);
+    expect(getReactionTypes('full')).toHaveLength(24);
     expect(getReactionTypes('unknown')).toEqual(getReactionTypes('updown'));
+  });
+
+  it('resolves subset from data-types names intersected with set', () => {
+    expect(resolveReactionTypes('full', ['like', 'fire', 'star'])).toEqual([
+      { name: 'like', label: '👍' },
+      { name: 'fire', label: '🔥' },
+      { name: 'star', label: '⭐' },
+    ]);
+  });
+
+  it('drops names outside the set catalog', () => {
+    expect(resolveReactionTypes('updown', ['like', 'fire', 'beer'])).toEqual([
+      { name: 'like', label: '👍' },
+    ]);
+  });
+
+  it('keeps empty filtered list empty', () => {
+    expect(resolveReactionTypes('full', [])).toEqual([]);
+  });
+
+  it('falls back to set catalog when names omitted', () => {
+    expect(resolveReactionTypes('updown')).toEqual(getReactionTypes('updown'));
+  });
+
+  it('skips cross-origin script for api resolve', () => {
+    appendReactionsScript('https://cdn.example.com/components/reactions/js/web/reactions.js');
+    expect(resolveApiUrlFromScript()).toBeNull();
   });
 });

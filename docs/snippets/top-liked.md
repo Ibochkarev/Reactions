@@ -37,15 +37,28 @@
 
 Для периодов кроме `all` компонент пересчитывает топ по сырым записям реакций за окно.
 
-## Примеры MODX
+## Примеры
 
 ### Топ-10 ресурсов за неделю
+
+MODX:
 
 ```
 [[!TopLiked? &period=`week` &limit=`10`]]
 ```
 
+Fenom:
+
+```
+{'!TopLiked' | snippet : [
+    'period' => 'week',
+    'limit'  => 10,
+]}
+```
+
 ### Топ товаров miniShop3
+
+MODX:
 
 ```
 [[!TopLiked?
@@ -56,28 +69,50 @@
 ]]
 ```
 
+Fenom:
+
+```
+{'!TopLiked' | snippet : [
+    'class'  => 'msProduct',
+    'period' => 'month',
+    'limit'  => 5,
+    'tpl'    => 'tpl.top.product',
+]}
+```
+
 ### Топ за день в плейсхолдер
+
+MODX:
 
 ```
 [[!TopLiked? &period=`day` &limit=`5` &toPlaceholder=`topDay`]]
 <ul>[[+topDay]]</ul>
 ```
 
-## Примеры Fenom
-
-### Сайдбар «Популярное за неделю»
+Fenom:
 
 ```
-<ul class="top-liked">
 {'!TopLiked' | snippet : [
-    'period' => 'week',
-    'limit'  => 10,
-    'tpl'    => 'tpl.top.row',
+    'period' => 'day',
+    'limit'  => 5,
+    'toPlaceholder' => 'topDay',
 ]}
-</ul>
+<ul>{$_modx->getPlaceholder('topDay')}</ul>
 ```
 
 ### Топ комментариев Tickets
+
+MODX:
+
+```
+[[!TopLiked?
+    &class=`TicketComment`
+    &period=`month`
+    &limit=`5`
+]]
+```
+
+Fenom:
 
 ```
 {'!TopLiked' | snippet : [
@@ -89,10 +124,48 @@
 
 ### Только контекст `web`
 
+MODX:
+
+```
+[[!TopLiked?
+    &period=`all`
+    &context=`web`
+    &limit=`20`
+]]
+```
+
+Fenom:
+
 ```
 {'!TopLiked' | snippet : [
     'period'  => 'all',
     'context' => 'web',
     'limit'   => 20,
 ]}
+```
+
+### Сайдбар с кастомным чанком
+
+MODX:
+
+```
+<ul class="top-liked">
+[[!TopLiked?
+    &period=`week`
+    &limit=`10`
+    &tpl=`tpl.top.row`
+]]
+</ul>
+```
+
+Fenom:
+
+```
+<ul class="top-liked">
+{'!TopLiked' | snippet : [
+    'period' => 'week',
+    'limit'  => 10,
+    'tpl'    => 'tpl.top.row',
+]}
+</ul>
 ```

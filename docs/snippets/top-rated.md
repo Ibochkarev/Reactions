@@ -25,21 +25,43 @@
 | `[[+rating]]` | Рейтинг (likes − dislikes) |
 | `[[+trending_score]]` | Оценка trending |
 
-## Примеры MODX
+## Примеры
 
 ### Топ-5 ресурсов по рейтингу
+
+MODX:
 
 ```
 [[!TopRated? &limit=`5`]]
 ```
 
+Fenom:
+
+```
+{'!TopRated' | snippet : ['limit' => 5]}
+```
+
 ### Лучшие статьи за месяц
+
+MODX:
 
 ```
 [[!TopRated? &period=`month` &limit=`10` &tpl=`tpl.top.article`]]
 ```
 
+Fenom:
+
+```
+{'!TopRated' | snippet : [
+    'period' => 'month',
+    'limit'  => 10,
+    'tpl'    => 'tpl.top.article',
+]}
+```
+
 ### Топ товаров
+
+MODX:
 
 ```
 [[!TopRated?
@@ -49,9 +71,30 @@
 ]]
 ```
 
-## Примеры Fenom
+Fenom:
+
+```
+{'!TopRated' | snippet : [
+    'class'  => 'msProduct',
+    'period' => 'year',
+    'limit'  => 8,
+]}
+```
 
 ### Блок «Лучшее за год»
+
+MODX:
+
+```
+<section class="top-rated">
+    <h2>Лучшее за год</h2>
+    <ol>
+    [[!TopRated? &period=`year` &limit=`10`]]
+    </ol>
+</section>
+```
+
+Fenom:
 
 ```
 <section class="top-rated">
@@ -67,6 +110,18 @@
 
 ### Рейтинг комментариев
 
+MODX:
+
+```
+[[!TopRated?
+    &class=`TicketComment`
+    &period=`week`
+    &limit=`3`
+]]
+```
+
+Fenom:
+
 ```
 {'!TopRated' | snippet : [
     'class'  => 'TicketComment',
@@ -75,7 +130,20 @@
 ]}
 ```
 
-### С кастомным чанком
+### С кастомным чанком и плейсхолдером
+
+MODX:
+
+```
+[[!TopRated?
+    &limit=`5`
+    &tpl=`myTopRatedRow`
+    &toPlaceholder=`topRated`
+]]
+[[+topRated]]
+```
+
+Fenom:
 
 ```
 {'!TopRated' | snippet : [

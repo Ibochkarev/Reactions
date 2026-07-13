@@ -20,6 +20,8 @@
 
 ## Сортировка ресурсов по лайкам
 
+MODX:
+
 ```
 [[!pdoResources?
     &parents=`0`
@@ -32,7 +34,23 @@
 ]]
 ```
 
+Fenom:
+
+```
+{'!pdoResources' | snippet : [
+    'parents' => 0,
+    'depth' => 10,
+    'limit' => 12,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = \'modResource\' AND Aggregate.context = \'web\'"}}',
+    'sortby' => 'Aggregate.likes',
+    'sortdir' => 'DESC',
+    'tpl' => 'tpl.article.card',
+]}
+```
+
 ## Сортировка по рейтингу
+
+MODX:
 
 ```
 [[!pdoResources?
@@ -44,7 +62,21 @@
 ]]
 ```
 
+Fenom:
+
+```
+{'!pdoResources' | snippet : [
+    'parents' => 5,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = \'modResource\'"}}',
+    'sortby' => 'Aggregate.rating',
+    'sortdir' => 'DESC',
+    'limit' => 10,
+]}
+```
+
 ## Сортировка по trending
+
+MODX:
 
 ```
 [[!pdoResources?
@@ -56,25 +88,87 @@
 ]]
 ```
 
+Fenom:
+
+```
+{'!pdoResources' | snippet : [
+    'parents' => 0,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = \'modResource\'"}}',
+    'sortby' => 'Aggregate.trending_score',
+    'sortdir' => 'DESC',
+    'limit' => 8,
+]}
+```
+
 ## Вывод счётчиков в чанке pdoResources
 
-В чанке `tpl.article.card` добавьте счётчик:
+В чанке `tpl.article.card`:
+
+MODX:
 
 ```
 <h3>[[+pagetitle]]</h3>
 <p>👍 [[!ReactionsCount? &object=`[[+id]]` &format=`{LIKES}`]]</p>
 ```
 
-Или через плейсхолдер, если вызываете `ReactionsCount` с `&toPlaceholder`:
+Fenom:
+
+```
+<h3>{$pagetitle}</h3>
+<p>👍 {'!ReactionsCount' | snippet : ['object' => $id, 'format' => '{LIKES}']}</p>
+```
+
+Или через плейсхолдер:
+
+MODX:
 
 ```
 [[!ReactionsCount? &object=`[[+id]]` &format=`{LIKES}` &toPlaceholder=`likes_[[+id]]`]]
 <span>[[+likes_[[+id]]]]</span>
 ```
 
-## Fenom + pdoPage
+Fenom:
 
-В Fenom-шаблоне pdoPage:
+```
+{'!ReactionsCount' | snippet : [
+    'object' => $id,
+    'format' => '{LIKES}',
+    'toPlaceholder' => ('likes_' ~ $id),
+]}
+<span>{$_modx->getPlaceholder('likes_' ~ $id)}</span>
+```
+
+## Список через pdoPage
+
+MODX:
+
+```
+[[!pdoPage?
+    &element=`pdoResources`
+    &parents=`0`
+    &leftJoin=`{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = 'modResource'"}}`
+    &sortby=`Aggregate.likes`
+    &sortdir=`DESC`
+    &tpl=`tpl.article.card`
+]]
+[[!+page.nav]]
+```
+
+Fenom:
+
+```
+{'!pdoPage' | snippet : [
+    'element' => 'pdoResources',
+    'parents' => 0,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = \'modResource\'"}}',
+    'sortby' => 'Aggregate.likes',
+    'sortdir' => 'DESC',
+    'tpl' => 'tpl.article.card',
+]}
+{$_modx->getPlaceholder('page.nav')}
+```
+
+В Fenom-шаблоне строки (если результаты в `$results`):
 
 ```
 {foreach $results as $row}
@@ -90,6 +184,8 @@
 
 ## Фильтр: только объекты с реакциями
 
+MODX:
+
 ```
 [[!pdoResources?
     &parents=`0`
@@ -98,6 +194,18 @@
     &sortby=`Aggregate.likes`
     &sortdir=`DESC`
 ]]
+```
+
+Fenom:
+
+```
+{'!pdoResources' | snippet : [
+    'parents' => 0,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.class_key = \'modResource\'"}}',
+    'where' => '{"Aggregate.likes:>":0}',
+    'sortby' => 'Aggregate.likes',
+    'sortdir' => 'DESC',
+]}
 ```
 
 ## Примечания

@@ -36,15 +36,25 @@ trending_score = sign × order + age
 | `[[+rating]]` | Рейтинг (likes − dislikes) |
 | `[[+trending_score]]` | Оценка trending (для отладки и сортировки) |
 
-## Примеры MODX
+## Примеры
 
 ### Горячие материалы на главной
+
+MODX:
 
 ```
 [[!Trending? &limit=`8`]]
 ```
 
+Fenom:
+
+```
+{'!Trending' | snippet : ['limit' => 8]}
+```
+
 ### Трендовые товары
+
+MODX:
 
 ```
 [[!Trending?
@@ -54,16 +64,47 @@ trending_score = sign × order + age
 ]]
 ```
 
+Fenom:
+
+```
+{'!Trending' | snippet : [
+    'class' => 'msProduct',
+    'limit' => 6,
+    'tpl'   => 'tpl.trending.product',
+]}
+```
+
 ### Блок в плейсхолдер
+
+MODX:
 
 ```
 [[!Trending? &limit=`5` &toPlaceholder=`trendingNow`]]
 <div class="trending">[[+trendingNow]]</div>
 ```
 
-## Примеры Fenom
+Fenom:
+
+```
+{'!Trending' | snippet : [
+    'limit' => 5,
+    'toPlaceholder' => 'trendingNow',
+]}
+<div class="trending">{$_modx->getPlaceholder('trendingNow')}</div>
+```
 
 ### Лента «Сейчас обсуждают»
+
+MODX:
+
+```
+<h2>Сейчас обсуждают</h2>
+<ul class="trending-list">
+[[!Trending? &limit=`10` &tpl=`tpl.trending.row`]]
+</ul>
+```
+
+Fenom:
 
 ```
 <h2>Сейчас обсуждают</h2>
@@ -77,6 +118,17 @@ trending_score = sign × order + age
 
 ### Трендовые комментарии
 
+MODX:
+
+```
+[[!Trending?
+    &class=`TicketComment`
+    &limit=`5`
+]]
+```
+
+Fenom:
+
 ```
 {'!Trending' | snippet : [
     'class' => 'TicketComment',
@@ -84,7 +136,18 @@ trending_score = sign × order + age
 ]}
 ```
 
-### Только контекст web
+### Только контекст `web`
+
+MODX:
+
+```
+[[!Trending?
+    &context=`web`
+    &limit=`12`
+]]
+```
+
+Fenom:
 
 ```
 {'!Trending' | snippet : [

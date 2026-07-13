@@ -26,6 +26,18 @@ Fenom (шаблон товара):
 
 ## Счётчик в каталоге
 
+MODX:
+
+```
+[[!ReactionsCount?
+    &class=`msProduct`
+    &object=`[[+id]]`
+    &format=`👍 {LIKES}`
+]]
+```
+
+Fenom:
+
 ```
 {'!ReactionsCount' | snippet : [
     'class'  => 'msProduct',
@@ -36,7 +48,9 @@ Fenom (шаблон товара):
 
 ## Сортировка каталога по популярности
 
-Через `msProducts` и `leftJoin`:
+Через `msProducts` и `leftJoin`.
+
+MODX:
 
 ```
 [[!msProducts?
@@ -49,7 +63,22 @@ Fenom (шаблон товара):
 ]]
 ```
 
+Fenom:
+
+```
+{'!msProducts' | snippet : [
+    'parents' => 10,
+    'limit' => 12,
+    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.class_key = \'msProduct\'"}}',
+    'sortby' => 'Aggregate.likes',
+    'sortdir' => 'DESC',
+    'tpl' => 'tpl.msProduct.card',
+]}
+```
+
 ## Топ товаров
+
+MODX:
 
 ```
 [[!TopLiked?
@@ -60,7 +89,20 @@ Fenom (шаблон товара):
 ]]
 ```
 
+Fenom:
+
+```
+{'!TopLiked' | snippet : [
+    'class'  => 'msProduct',
+    'period' => 'month',
+    'limit'  => 6,
+    'tpl'    => 'tpl.top.product',
+]}
+```
+
 Трендовые товары:
+
+MODX:
 
 ```
 [[!Trending?
@@ -69,9 +111,20 @@ Fenom (шаблон товара):
 ]]
 ```
 
+Fenom:
+
+```
+{'!Trending' | snippet : [
+    'class' => 'msProduct',
+    'limit' => 8,
+]}
+```
+
 ## Счётчик в чанке msProducts
 
 В `tpl.msProduct.card`:
+
+MODX:
 
 ```
 <div class="product-card">
@@ -85,9 +138,36 @@ Fenom (шаблон товара):
 </div>
 ```
 
+Fenom:
+
+```
+<div class="product-card">
+    <h3>{$pagetitle}</h3>
+    <p class="product-price">{$price} ₽</p>
+    {'!ReactionsCount' | snippet : [
+        'class'  => 'msProduct',
+        'object' => $id,
+        'format' => '❤️ {TOTAL}',
+    ]}
+</div>
+```
+
 ## Контекст
 
-Товары обычно живут в контексте `web`. Если каталог в отдельном контексте, передайте `&context`:
+Товары обычно живут в контексте `web`. Если каталог в отдельном контексте, передайте `context`:
+
+MODX:
+
+```
+[[!Reactions?
+    &class=`msProduct`
+    &object=`[[*id]]`
+    &context=`catalog`
+    &set=`updown`
+]]
+```
+
+Fenom:
 
 ```
 {'!Reactions' | snippet : [
