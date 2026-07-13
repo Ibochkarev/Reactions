@@ -1,6 +1,5 @@
 <?php
 
-use Reactions\Dto\VisitorIdentity;
 use Reactions\Service\BotDetector;
 
 function makeBotDetector(): BotDetector

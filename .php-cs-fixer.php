@@ -5,6 +5,7 @@ $finder = PhpCsFixer\Finder::create()
         __DIR__ . '/core/components/reactions/src',
         __DIR__ . '/tests',
     ])
+    ->exclude('Model')
     ->name('*.php');
 
 return (new PhpCsFixer\Config())

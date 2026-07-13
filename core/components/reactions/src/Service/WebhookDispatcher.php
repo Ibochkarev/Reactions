@@ -4,7 +4,6 @@ namespace Reactions\Service;
 
 use Reactions\Dto\ReactionRequest;
 use Reactions\Dto\ReactionResult;
-use Reactions\Dto\VisitorIdentity;
 use Reactions\Reactions;
 
 class WebhookDispatcher

@@ -1,9 +1,9 @@
 <?php
 
-use Reactions\Service\WebhookDispatcher;
 use Reactions\Dto\ReactionRequest;
 use Reactions\Dto\ReactionResult;
 use Reactions\Enum\ReactionAction;
+use Reactions\Service\WebhookDispatcher;
 
 it('skips dispatch when webhooks disabled', function () {
     $modx = Mockery::mock(\MODX\Revolution\modX::class);

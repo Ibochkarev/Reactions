@@ -45,7 +45,7 @@ class ExportCommand extends AbstractCommand
                 return 1;
             }
 
-            $this->writeln("Exported " . count($items) . " reaction(s) to {$file}");
+            $this->writeln('Exported ' . count($items) . " reaction(s) to {$file}");
 
             return 0;
         }

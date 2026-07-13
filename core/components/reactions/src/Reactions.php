@@ -3,14 +3,14 @@
 namespace Reactions;
 
 use MODX\Revolution\modX;
-use Reactions\Service\ReactionService;
-use Reactions\Service\IdentityResolver;
-use Reactions\Service\RateLimiter;
+use Reactions\Service\AggregateService;
 use Reactions\Service\BotDetector;
+use Reactions\Service\IdentityResolver;
+use Reactions\Service\NotificationService;
+use Reactions\Service\RateLimiter;
+use Reactions\Service\ReactionService;
 use Reactions\Service\TrendingCalculator;
 use Reactions\Service\WebhookDispatcher;
-use Reactions\Service\NotificationService;
-use Reactions\Service\AggregateService;
 
 class Reactions
 {
