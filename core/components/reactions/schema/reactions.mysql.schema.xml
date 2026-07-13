@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model package="Reactions\Model" baseClass="xPDO\Om\xPDOObject" platform="mysql" defaultEngine="InnoDB" version="3.0">
+    <object class="ReactionType" table="reactions_types" extends="xPDO\Om\xPDOSimpleObject">
+        <field key="name" dbtype="varchar" precision="64" phptype="string" null="false" default=""/>
+        <field key="emoji" dbtype="varchar" precision="16" phptype="string" null="false" default=""/>
+        <field key="icon" dbtype="varchar" precision="255" phptype="string" null="true" default=""/>
+        <field key="ordering" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="active" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="1"/>
+
+        <index alias="name" name="name" primary="false" unique="true" type="BTREE">
+            <column key="name" length="" collation="A" null="false"/>
+        </index>
+        <index alias="active_ordering" name="active_ordering" primary="false" unique="false" type="BTREE">
+            <column key="active" length="" collation="A" null="false"/>
+            <column key="ordering" length="" collation="A" null="false"/>
+        </index>
+    </object>
+
+    <object class="ReactionSet" table="reactions_sets" extends="xPDO\Om\xPDOSimpleObject">
+        <field key="key" dbtype="varchar" precision="64" phptype="string" null="false" default=""/>
+        <field key="title" dbtype="varchar" precision="255" phptype="string" null="false" default=""/>
+        <field key="exclusive" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="1"/>
+        <field key="active" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="1"/>
+
+        <index alias="key" name="key" primary="false" unique="true" type="BTREE">
+            <column key="key" length="" collation="A" null="false"/>
+        </index>
+
+        <composite alias="SetTypes" class="ReactionSetType" local="id" foreign="set_id" cardinality="many" owner="local"/>
+    </object>
+
+    <object class="ReactionSetType" table="reactions_set_types" extends="xPDO\Om\xPDOSimpleObject">
+        <field key="set_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="type_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="ordering" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+
+        <index alias="set_type" name="set_type" primary="false" unique="true" type="BTREE">
+            <column key="set_id" length="" collation="A" null="false"/>
+            <column key="type_id" length="" collation="A" null="false"/>
+        </index>
+
+        <aggregate alias="Set" class="ReactionSet" local="set_id" foreign="id" cardinality="one" owner="foreign"/>
+        <aggregate alias="Type" class="ReactionType" local="type_id" foreign="id" cardinality="one" owner="foreign"/>
+    </object>
+
+    <object class="Reaction" table="reactions" extends="xPDO\Om\xPDOSimpleObject">
+        <field key="class_key" dbtype="varchar" precision="100" phptype="string" null="false" default=""/>
+        <field key="object_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="context" dbtype="varchar" precision="100" phptype="string" null="false" default="web"/>
+        <field key="type_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="user_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true"/>
+        <field key="fingerprint" dbtype="varchar" precision="64" phptype="string" null="false" default=""/>
+        <field key="ip_hash" dbtype="varchar" precision="64" phptype="string" null="true"/>
+        <field key="session_id" dbtype="varchar" precision="128" phptype="string" null="true"/>
+        <field key="created_at" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="updated_at" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+
+        <index alias="unique_reaction" name="unique_reaction" primary="false" unique="true" type="BTREE">
+            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="object_id" length="" collation="A" null="false"/>
+            <column key="context" length="" collation="A" null="false"/>
+            <column key="fingerprint" length="" collation="A" null="false"/>
+            <column key="type_id" length="" collation="A" null="false"/>
+        </index>
+        <index alias="object" name="object" primary="false" unique="false" type="BTREE">
+            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="object_id" length="" collation="A" null="false"/>
+            <column key="context" length="" collation="A" null="false"/>
+        </index>
+        <index alias="created_at" name="created_at" primary="false" unique="false" type="BTREE">
+            <column key="created_at" length="" collation="A" null="false"/>
+        </index>
+        <index alias="user_id" name="user_id" primary="false" unique="false" type="BTREE">
+            <column key="user_id" length="" collation="A" null="true"/>
+        </index>
+
+        <aggregate alias="Type" class="ReactionType" local="type_id" foreign="id" cardinality="one" owner="foreign"/>
+    </object>
+
+    <object class="ReactionAggregate" table="reactions_aggregates" extends="xPDO\Om\xPDOSimpleObject">
+        <field key="class_key" dbtype="varchar" precision="100" phptype="string" null="false" default=""/>
+        <field key="object_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="context" dbtype="varchar" precision="100" phptype="string" null="false" default="web"/>
+        <field key="counts" dbtype="text" phptype="json" null="false" default="{}"/>
+        <field key="total" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="likes" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="dislikes" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="rating" dbtype="int" precision="11" phptype="integer" null="false" default="0"/>
+        <field key="trending_score" dbtype="decimal" precision="16,6" phptype="float" null="false" default="0"/>
+        <field key="updated_at" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+
+        <index alias="object_unique" name="object_unique" primary="false" unique="true" type="BTREE">
+            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="object_id" length="" collation="A" null="false"/>
+            <column key="context" length="" collation="A" null="false"/>
+        </index>
+        <index alias="likes" name="likes" primary="false" unique="false" type="BTREE">
+            <column key="likes" length="" collation="A" null="false"/>
+        </index>
+        <index alias="rating" name="rating" primary="false" unique="false" type="BTREE">
+            <column key="rating" length="" collation="A" null="false"/>
+        </index>
+        <index alias="trending" name="trending" primary="false" unique="false" type="BTREE">
+            <column key="trending_score" length="" collation="A" null="false"/>
+        </index>
+        <index alias="class_likes" name="class_likes" primary="false" unique="false" type="BTREE">
+            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="likes" length="" collation="A" null="false"/>
+        </index>
+    </object>
+
+    <object class="ReactionBan" table="reactions_bans" extends="xPDO\Om\xPDOSimpleObject">
+        <field key="ip_hash" dbtype="varchar" precision="64" phptype="string" null="true"/>
+        <field key="user_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true"/>
+        <field key="reason" dbtype="varchar" precision="255" phptype="string" null="true" default=""/>
+        <field key="created_at" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
+        <field key="expires_at" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true"/>
+
+        <index alias="ip_hash" name="ip_hash" primary="false" unique="false" type="BTREE">
+            <column key="ip_hash" length="" collation="A" null="true"/>
+        </index>
+        <index alias="user_id" name="user_id" primary="false" unique="false" type="BTREE">
+            <column key="user_id" length="" collation="A" null="true"/>
+        </index>
+    </object>
+</model>
