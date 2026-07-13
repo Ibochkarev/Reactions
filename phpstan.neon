@@ -1,0 +1,11 @@
+parameters:
+    level: 5
+    paths:
+        - core/components/reactions/src
+    excludePaths:
+        - core/components/reactions/src/Model
+    scanFiles:
+        - tests/stubs/modX.php
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '#.#'
