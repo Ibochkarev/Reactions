@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Поле `class_key` в таблицах реакций переименовано в `object_class` (конфликт с STI xPDO); API/сниппеты по-прежнему принимают `class` / `class_key`
 - `ObjectLookup`: короткие алиасы (`msProduct`, `TicketComment`) резолвятся в FQCN / STI без вызова xPDO по незарегистрированному короткому классу
 - CLI / `api.php`: поиск корня MODX при симлинке Extra; сортировки `type`/`ban`/`set` через `newQuery` (xPDO 3)
+- `getCounts`: без долгого кеша карты счётчиков (SSR `ReactionsCount` не отставал от AJAX-виджета); `CountFormat` подставляет ключи по убыванию длины
 - `CountFormat`: неизвестный плейсхолдер типа (`{love}`…) → `0`, не сырой текст
 - Виджет: exclusive = набор exclusive **или** `!allow_multiple`; синхронизация соседних виджетов (`reactions:updated`); SSR-классы кнопок совпадают с JS
 - Dev-resolver симлинков: сайт → `Extras/Reactions` (исходники остаются в git)

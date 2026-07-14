@@ -22,6 +22,16 @@ it('fills missing type placeholders with zero', function () {
     expect($out)->toBe('❤️ 0 · 🔥 0 · 👍 2');
 });
 
+it('replaces longer placeholders before shorter ones', function () {
+    $out = CountFormat::apply(
+        '{LIKES}/{like}',
+        ['{LIKES}' => '9'],
+        ['like' => 2],
+    );
+
+    expect($out)->toBe('9/2');
+});
+
 it('does not invent uppercase built-in placeholders', function () {
     $out = CountFormat::apply('{TOTAL} {FOO}', ['{TOTAL}' => '1'], []);
 

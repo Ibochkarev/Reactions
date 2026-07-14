@@ -45,35 +45,15 @@ class AggregateService
 
     public function getCounts(string $classKey, int $objectId, string $context = 'web'): array
     {
-        $cacheKey = 'counts/' . $classKey . '/' . $objectId . '/' . $context;
-        $cached = $this->cache()->get($cacheKey);
-        if (is_array($cached)) {
-            $normalized = Counts::normalize($cached);
-            // Only trust cache when it is already a clean int map.
-            if ($normalized === $cached) {
-                return $normalized;
-            }
-            // Junk strings / wrong shapes → drop and reload from DB.
-            $this->cache()->delete($cacheKey);
-        } elseif (is_string($cached) && $cached !== '') {
-            $normalized = Counts::normalize($cached);
-            if ($normalized !== []) {
-                $this->cache()->set($cacheKey, $normalized, 300);
-
-                return $normalized;
-            }
-            $this->cache()->delete($cacheKey);
-        }
-
+        // Always read the aggregate row. A 5‑minute counts cache drifted from DB/widget
+        // after racey set() and left ReactionsCount SSR on zeros while AJAX showed live chips.
         $aggregate = $this->reactions->modx->getObject(ReactionAggregate::class, [
             'object_class' => $classKey,
             'object_id' => $objectId,
             'context' => $context,
         ]);
-        $counts = Counts::normalize($aggregate ? $aggregate->get('counts') : []);
-        $this->cache()->set($cacheKey, $counts, 300);
 
-        return $counts;
+        return Counts::normalize($aggregate ? $aggregate->get('counts') : []);
     }
 
     /** @return list<string> */

@@ -13,3 +13,4 @@ coverage/
 *.transport.zip
 .cache/
 /stubs/
+_preview/

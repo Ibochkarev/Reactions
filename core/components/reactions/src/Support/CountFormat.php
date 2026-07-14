@@ -25,6 +25,9 @@ final class CountFormat
             }
         }
 
+        // Longer keys first so {like} cannot clip inside {LIKES} if casing ever matches.
+        uksort($replacements, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
         return str_replace(array_keys($replacements), array_values($replacements), $format);
     }
 }
