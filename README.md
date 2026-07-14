@@ -37,18 +37,20 @@ php _build/build.php
 
 ## Быстрый старт
 
-Вывод блока реакций на странице ресурса.
+Вывод блока реакций на странице ресурса. Для `github` / `full` при `layout=auto` (по умолчанию) виджет рисует compact picker: чипы + кнопка `+`. Полосу из всех кнопок возвращает параметр `layout=bar`.
 
 Синтаксис MODX:
 
 ```
 [[!Reactions? &set=`github`]]
+[[!Reactions? &set=`github` &layout=`bar`]]
 ```
 
 Синтаксис Fenom:
 
 ```
 {'!Reactions' | snippet : ['set' => 'github']}
+{'!Reactions' | snippet : ['set' => 'github', 'layout' => 'bar']}
 ```
 
 Реакции на комментарий Tickets:

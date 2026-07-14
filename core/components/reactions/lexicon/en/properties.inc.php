@@ -2,6 +2,7 @@
 
 $_lang['reactions_prop_set'] = 'Reaction set key';
 $_lang['reactions_prop_types'] = 'Subset of type names (comma-separated)';
+$_lang['reactions_prop_layout'] = 'UI layout: auto (picker if >3 types), picker, or bar';
 $_lang['reactions_prop_class'] = 'Object class key';
 $_lang['reactions_prop_object'] = 'Object ID';
 $_lang['reactions_prop_context'] = 'MODX context (empty = current)';

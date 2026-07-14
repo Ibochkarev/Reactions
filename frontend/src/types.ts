@@ -1,3 +1,5 @@
+export type WidgetLayout = 'auto' | 'bar' | 'picker';
+
 export interface WidgetConfig {
   api: string;
   classKey: string;
@@ -11,6 +13,11 @@ export interface WidgetConfig {
   exclusive: boolean;
   /** Mirrors reactions_allow_multiple / data-allow-multiple */
   allowMultiple: boolean;
+  /**
+   * auto = picker when more than 3 types, else bar.
+   * picker = summary chips + popover; bar = all types inline.
+   */
+  layout: WidgetLayout;
 }
 
 export interface ReactionsGlobalConfig {

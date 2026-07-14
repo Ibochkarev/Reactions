@@ -56,16 +56,20 @@ Fenom:
 
 ### 2. Выведите блок реакций
 
+Для `github` / `full` виджет сам переключается на compact picker (чипы + кнопка `+`). Для `updown` остаётся полоса из двух кнопок.
+
 MODX:
 
 ```
 [[!Reactions? &set=`github`]]
+[[!Reactions? &set=`updown`]]
 ```
 
 Fenom:
 
 ```
 {'!Reactions' | snippet : ['set' => 'github', 'object' => $_modx->resource.id]}
+{'!Reactions' | snippet : ['set' => 'github', 'layout' => 'bar']}
 ```
 
 ### 3. Проверьте API
@@ -101,7 +105,7 @@ curl "https://example.com/assets/components/reactions/api.php?action=counts&clas
 
 | Кейс | Где |
 | --- | --- |
-| `updown` / `github` / `full`, `&types=`, отсев чужих имён | [Reactions](snippets/reactions.md#примеры) |
+| `updown` / `github` / `full`, `layout` picker/bar, `&types=` | [Reactions](snippets/reactions.md#примеры) |
 | `{TOTAL}` / `{LIKES}` / `{RATING}` / `{love}` → `0` | [ReactionsCount](snippets/reactions-count.md#примеры) |
 | Периоды `day`…`all`, `msProduct`, `toPlaceholder` | [TopLiked](snippets/top-liked.md#примеры), [TopRated](snippets/top-rated.md#примеры), [Trending](snippets/trending.md#примеры) |
 | JSON-LD при like/dislike и пустой output без голосов | [ReactionsSchema](integrations/seo.md#примеры) |

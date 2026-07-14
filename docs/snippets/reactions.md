@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | `set` | из `reactions_default_set` | Ключ набора реакций (`updown`, `github`, `full` или свой) |
 | `types` | *(пусто)* | Подмножество имён типов через запятую (пересечение с набором). Для `full` иначе берётся `reactions_full_types` |
+| `layout` | `auto` | `auto` — picker если типов больше 3, иначе bar; `picker` — чипы + popover; `bar` — все кнопки в ряд |
 | `class` | `modResource` | `class_key` объекта в xPDO |
 | `object` | ID текущего ресурса | ID объекта |
 | `context` | ключ текущего контекста | Контекст MODX (`web`, `mgr` и т.д.) |
@@ -84,6 +85,8 @@ like,love,fire,star,clap,rocket,heart_eyes
 | `[[+types]]` | Имена показанных типов через запятую (`data-types` для JS) |
 | `[[+exclusive]]` | `1` / `0` — набор exclusive (`data-exclusive`) |
 | `[[+allow_multiple]]` | `1` / `0` — настройка `reactions_allow_multiple` (`data-allow-multiple`) |
+| `[[+layout]]` | `picker` или `bar` после `auto` (`data-layout`) |
+| `[[+trigger]]` | HTML кнопки `+` для picker (пусто в bar) |
 
 Для JS контейнеру нужны класс `reactions-widget` и data-атрибуты объекта (`data-class-key`, `data-object-id`). `data-api` не обязателен. См. [js.md](../js.md).
 
@@ -133,26 +136,32 @@ Fenom:
 ]}
 ```
 
-### Восемь кнопок: `github`
+### `github` — compact picker (по умолчанию при `layout=auto`)
+
+Чипы текущих реакций и кнопка `+` с сеткой типов. Не нужна длинная полоса из 8 кнопок.
 
 MODX:
 
 ```
 [[!Reactions? &set=`github`]]
+[[!Reactions? &set=`github` &layout=`picker`]]
+[[!Reactions? &set=`github` &layout=`bar`]]
 ```
 
 Fenom:
 
 ```
 {'!Reactions' | snippet : ['set' => 'github']}
+{'!Reactions' | snippet : ['set' => 'github', 'layout' => 'bar']}
 ```
 
-### До 24 кнопок: `full`
+### До 24 типов: `full` (тоже picker по умолчанию)
 
 MODX:
 
 ```
 [[!Reactions? &set=`full`]]
+[[!Reactions? &set=`full` &layout=`bar`]]
 ```
 
 Fenom:
@@ -161,7 +170,7 @@ Fenom:
 {'!Reactions' | snippet : ['set' => 'full']}
 ```
 
-Без `&types=` для `full` берётся системная `reactions_full_types`; пустая настройка → все 24 типа.
+Без `&types=` для `full` берётся системная `reactions_full_types`; пустая настройка → все 24 типа в popover.
 
 ### Подмножество через `&types=` на `full`
 

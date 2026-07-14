@@ -7,6 +7,7 @@ import {
   parseConfig,
   resolveApiUrl,
   resolveApiUrlFromScript,
+  resolveLayout,
   resolveReactionTypes,
 } from './widget';
 
@@ -104,7 +105,14 @@ describe('parseConfig', () => {
       types: undefined,
       exclusive: true,
       allowMultiple: false,
+      layout: 'auto',
     });
+  });
+
+  it('reads data-layout', () => {
+    appendReactionsScript();
+    const el = createHost({ 'data-layout': 'picker' });
+    expect(parseConfig(el)?.layout).toBe('picker');
   });
 
   it('reads exclusive / allow-multiple flags', () => {
@@ -185,6 +193,13 @@ describe('ReactionsWidget', () => {
     });
   });
 
+  it('resolveLayout uses picker above threshold', () => {
+    expect(resolveLayout('auto', 2)).toBe('bar');
+    expect(resolveLayout('auto', 8)).toBe('picker');
+    expect(resolveLayout('picker', 2)).toBe('picker');
+    expect(resolveLayout('bar', 24)).toBe('bar');
+  });
+
   it('renders reaction buttons with counts and aria attributes', async () => {
     appendReactionsScript();
     const el = createHost();
@@ -195,6 +210,7 @@ describe('ReactionsWidget', () => {
 
     expect(el.getAttribute('role')).toBe('group');
     expect(el.getAttribute('aria-label')).toBe('Reactions');
+    expect(el.dataset.layout).toBe('bar');
 
     const buttons = el.querySelectorAll<HTMLButtonElement>('.reactions-widget__button');
     expect(buttons).toHaveLength(2);
@@ -316,6 +332,37 @@ describe('ReactionsWidget', () => {
     expect(getReactionTypes('github')).toHaveLength(8);
     expect(getReactionTypes('full')).toHaveLength(24);
     expect(getReactionTypes('unknown')).toEqual(getReactionTypes('updown'));
+  });
+
+  it('renders picker shell for github with summary chips and trigger', async () => {
+    mockedApi.fetchCounts.mockResolvedValue({
+      class_key: 'modResource',
+      object_id: 42,
+      context: 'web',
+      counts: { like: 2, love: 1, funny: 0 },
+      total: 3,
+      user_reaction: ['love'],
+    });
+
+    appendReactionsScript();
+    const el = createHost({
+      'data-api': '/assets/components/reactions/api.php',
+      'data-set': 'github',
+      'data-exclusive': '0',
+      'data-allow-multiple': '1',
+    });
+    const widget = new ReactionsWidget(el, parseConfig(el)!);
+    await widget.init();
+
+    expect(widget.mode).toBe('picker');
+    expect(el.dataset.layout).toBe('picker');
+    expect(el.querySelector('.reactions-widget__trigger')).not.toBeNull();
+    expect(el.querySelectorAll('.reactions-widget__summary .reactions-widget__button')).toHaveLength(2);
+    expect(el.querySelector('.reactions-widget__popover')).toBeNull();
+
+    el.querySelector<HTMLButtonElement>('.reactions-widget__trigger')?.click();
+    expect(el.querySelector('.reactions-widget__popover')).not.toBeNull();
+    expect(el.querySelectorAll('.reactions-widget__picker-button')).toHaveLength(8);
   });
 
   it('resolves subset from data-types names intersected with set', () => {

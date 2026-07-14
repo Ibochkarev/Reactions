@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Связи модели / загрузка типов: FQCN в metaMap; counts нормализуются из JSON/string
 - Поле `class_key` в таблицах реакций переименовано в `object_class` (конфликт с STI xPDO); API/сниппеты по-прежнему принимают `class` / `class_key`
 - `ObjectLookup`: короткие алиасы (`msProduct`, `TicketComment`) резолвятся в FQCN / STI без вызова xPDO по незарегистрированному короткому классу
-- CLI: поиск корня MODX при симлинке Extra; сортировки `type`/`ban`/`set` через `newQuery` (xPDO 3)
+- CLI / `api.php`: поиск корня MODX при симлинке Extra; сортировки `type`/`ban`/`set` через `newQuery` (xPDO 3)
 - `CountFormat`: неизвестный плейсхолдер типа (`{love}`…) → `0`, не сырой текст
 - Виджет: exclusive = набор exclusive **или** `!allow_multiple`; синхронизация соседних виджетов (`reactions:updated`); SSR-классы кнопок совпадают с JS
 - Dev-resolver симлинков: сайт → `Extras/Reactions` (исходники остаются в git)
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AJAX/REST API (`assets/components/reactions/api.php`): counts, react, top, trending, latest, csrf; admin CRUD типов/наборов/банов и stats
 - Безопасность API: CSRF, Origin check, nonce (replay protection), rate limit
 - Сниппеты: Reactions, ReactionsCount, TopLiked, TopRated, Trending, ReactionsSchema
-- TypeScript-виджет (Vite): оптимистичные обновления, ARIA, клавиатура; автоопределение URL API; `data-types` для подмножества кнопок; `data-exclusive` / `data-allow-multiple`
+- TypeScript-виджет (Vite): оптимистичные обновления, ARIA, клавиатура; автоопределение URL API; `data-types` для подмножества кнопок; `data-exclusive` / `data-allow-multiple`; layout `picker`/`bar`/`auto` (чипы + popover для github/full; Escape / клик снаружи)
 - `_build/build.php`: сборка фронтенда (`frontend/` → `assets/…/js/web/`) в шаге `assets()`
 - CLI: recount, cleanup, export, type, set, ban, stats
 - Документация: сниппеты, интеграции (pdoTools, miniShop3, Tickets, Collections, SEO), API, JS, CLI, события, webhooks

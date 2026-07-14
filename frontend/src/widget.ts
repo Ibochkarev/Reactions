@@ -1,5 +1,11 @@
 import { createNonce, fetchCounts, getCsrf, react, unreact } from './api';
-import { REACTION_SETS, type CountsData, type ReactionTypeDef, type WidgetConfig } from './types';
+import {
+  REACTION_SETS,
+  type CountsData,
+  type ReactionTypeDef,
+  type WidgetConfig,
+  type WidgetLayout,
+} from './types';
 
 export interface WidgetState {
   counts: Record<string, number>;
@@ -12,6 +18,7 @@ export interface WidgetState {
 
 const REACTIONS_SCRIPT_RE = /(?:^|\/)components\/reactions\/js\/web\/reactions\.js(?:\?|$)/i;
 const UPDATED_EVENT = 'reactions:updated';
+const PICKER_THRESHOLD = 3;
 
 interface WidgetUpdatedDetail {
   classKey: string;
@@ -30,9 +37,33 @@ function parseDataFlag(value: string | undefined, fallback: boolean): boolean {
   return value === '1' || value.toLowerCase() === 'true' || value === 'yes';
 }
 
+function parseLayout(value: string | undefined): WidgetLayout {
+  const raw = (value ?? 'auto').toLowerCase();
+  if (raw === 'picker' || raw === 'bar' || raw === 'auto') {
+    return raw;
+  }
+
+  return 'auto';
+}
+
 /** Mirrors ReactionService::isSingleReactionMode */
 export function isExclusiveMode(config: Pick<WidgetConfig, 'exclusive' | 'allowMultiple'>): boolean {
   return config.exclusive || !config.allowMultiple;
+}
+
+export function resolveLayout(
+  layout: WidgetLayout,
+  typeCount: number,
+  threshold: number = PICKER_THRESHOLD,
+): 'bar' | 'picker' {
+  if (layout === 'picker') {
+    return 'picker';
+  }
+  if (layout === 'bar') {
+    return 'bar';
+  }
+
+  return typeCount > threshold ? 'picker' : 'bar';
 }
 
 /**
@@ -86,12 +117,13 @@ export function parseConfig(el: HTMLElement): WidgetConfig | null {
   const types = parseTypeNamesFromElement(el);
   const exclusive = parseDataFlag(el.dataset.exclusive, set === 'updown');
   const allowMultiple = parseDataFlag(el.dataset.allowMultiple, false);
+  const layout = parseLayout(el.dataset.layout);
 
   if (!api || !classKey || !Number.isFinite(objectId) || objectId <= 0) {
     return null;
   }
 
-  return { api, classKey, objectId, set, context, csrf, types, exclusive, allowMultiple };
+  return { api, classKey, objectId, set, context, csrf, types, exclusive, allowMultiple, layout };
 }
 
 /**
@@ -145,8 +177,10 @@ export class ReactionsWidget {
   readonly el: HTMLElement;
   readonly config: WidgetConfig;
   readonly types: ReactionTypeDef[];
+  readonly mode: 'bar' | 'picker';
   state: WidgetState;
-  private groupEl: HTMLElement | null = null;
+  private popoverOpen = false;
+  private documentBound: (() => void) | null = null;
   private readonly onExternalUpdate = (event: Event): void => {
     const detail = (event as CustomEvent<WidgetUpdatedDetail>).detail;
     if (!detail || detail.source === this || this.state.pending) {
@@ -170,6 +204,7 @@ export class ReactionsWidget {
     this.el = el;
     this.config = config;
     this.types = resolveReactionTypes(config.set, config.types);
+    this.mode = resolveLayout(config.layout, this.types.length);
     this.state = {
       counts: {},
       userReactions: [],
@@ -180,9 +215,15 @@ export class ReactionsWidget {
     };
 
     this.el.classList.add('reactions-widget');
+    this.el.dataset.layout = this.mode;
     this.el.setAttribute('role', 'group');
     this.el.setAttribute('aria-label', 'Reactions');
     window.addEventListener(UPDATED_EVENT, this.onExternalUpdate);
+  }
+
+  destroy(): void {
+    this.unbindDocument();
+    window.removeEventListener(UPDATED_EVENT, this.onExternalUpdate);
   }
 
   async init(): Promise<void> {
@@ -227,10 +268,26 @@ export class ReactionsWidget {
     );
   }
 
+  private unbindDocument(): void {
+    if (this.documentBound) {
+      this.documentBound();
+      this.documentBound = null;
+    }
+  }
+
+  private setPopoverOpen(open: boolean): void {
+    this.popoverOpen = open;
+    if (!open) {
+      this.unbindDocument();
+    }
+  }
+
   render(): void {
+    this.unbindDocument();
     this.el.innerHTML = '';
     const busy = this.state.loading || this.state.pending;
     this.el.dataset.loading = busy ? 'true' : 'false';
+    this.el.dataset.layout = this.mode;
     this.el.setAttribute('aria-busy', busy ? 'true' : 'false');
 
     if (this.state.error && this.state.loading === false && Object.keys(this.state.counts).length === 0) {
@@ -242,15 +299,11 @@ export class ReactionsWidget {
       return;
     }
 
-    this.groupEl = document.createElement('div');
-    this.groupEl.className = 'reactions-widget__buttons';
-
-    for (const type of this.types) {
-      const button = this.createButton(type);
-      this.groupEl.appendChild(button);
+    if (this.mode === 'picker') {
+      this.renderPicker();
+    } else {
+      this.renderBar(this.types);
     }
-
-    this.el.appendChild(this.groupEl);
 
     if (this.state.error) {
       const errorEl = document.createElement('p');
@@ -259,6 +312,152 @@ export class ReactionsWidget {
       errorEl.textContent = this.state.error;
       this.el.appendChild(errorEl);
     }
+  }
+
+  private renderBar(types: ReactionTypeDef[]): void {
+    const group = document.createElement('div');
+    group.className = 'reactions-widget__buttons';
+    for (const type of types) {
+      group.appendChild(this.createButton(type));
+    }
+    this.el.appendChild(group);
+  }
+
+  private summaryTypes(): ReactionTypeDef[] {
+    return this.types.filter((type) => {
+      const count = this.state.counts[type.name] ?? 0;
+      return count > 0 || this.state.userReactions.includes(type.name);
+    });
+  }
+
+  private renderPicker(): void {
+    const shell = document.createElement('div');
+    shell.className = 'reactions-widget__shell';
+
+    const summary = document.createElement('div');
+    summary.className = 'reactions-widget__summary';
+    summary.setAttribute('role', 'group');
+    summary.setAttribute('aria-label', 'Current reactions');
+
+    for (const type of this.summaryTypes()) {
+      summary.appendChild(this.createButton(type));
+    }
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'reactions-widget__trigger' + (this.popoverOpen ? ' is-open' : '');
+    trigger.setAttribute('aria-haspopup', 'dialog');
+    trigger.setAttribute('aria-expanded', this.popoverOpen ? 'true' : 'false');
+    trigger.setAttribute('aria-label', 'Add reaction');
+    trigger.disabled = this.state.loading || this.state.pending;
+
+    const triggerIcon = document.createElement('span');
+    triggerIcon.className = 'reactions-widget__trigger-icon';
+    triggerIcon.setAttribute('aria-hidden', 'true');
+    triggerIcon.textContent = this.popoverOpen ? '×' : '+';
+    trigger.appendChild(triggerIcon);
+
+    trigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.setPopoverOpen(!this.popoverOpen);
+      this.render();
+      if (this.popoverOpen) {
+        this.bindPopoverDismiss();
+        const first = this.el.querySelector<HTMLButtonElement>('.reactions-widget__picker-button');
+        first?.focus();
+      } else {
+        trigger.focus();
+      }
+    });
+
+    shell.append(summary, trigger);
+
+    if (this.popoverOpen) {
+      shell.appendChild(this.createPopover());
+    }
+
+    this.el.appendChild(shell);
+  }
+
+  private createPopover(): HTMLElement {
+    const popover = document.createElement('div');
+    popover.className = 'reactions-widget__popover';
+    popover.setAttribute('role', 'dialog');
+    popover.setAttribute('aria-label', 'Choose a reaction');
+
+    const grid = document.createElement('div');
+    grid.className = 'reactions-widget__picker';
+    grid.setAttribute('role', 'listbox');
+
+    for (const type of this.types) {
+      grid.appendChild(this.createPickerButton(type));
+    }
+
+    popover.appendChild(grid);
+    return popover;
+  }
+
+  private bindPopoverDismiss(): void {
+    this.unbindDocument();
+
+    const onPointer = (event: Event): void => {
+      const target = event.target;
+      if (!(target instanceof Node) || this.el.contains(target)) {
+        return;
+      }
+      this.setPopoverOpen(false);
+      this.render();
+    };
+
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.setPopoverOpen(false);
+        this.render();
+        this.el.querySelector<HTMLButtonElement>('.reactions-widget__trigger')?.focus();
+      }
+    };
+
+    // Next tick so the opening click does not close immediately.
+    window.setTimeout(() => {
+      document.addEventListener('pointerdown', onPointer, true);
+      document.addEventListener('keydown', onKey, true);
+    }, 0);
+
+    this.documentBound = () => {
+      document.removeEventListener('pointerdown', onPointer, true);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }
+
+  private createPickerButton(type: ReactionTypeDef): HTMLButtonElement {
+    const count = this.state.counts[type.name] ?? 0;
+    const pressed = this.state.userReactions.includes(type.name);
+    const disabled = this.state.loading || this.state.pending;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'reactions-widget__picker-button' + (pressed ? ' is-active' : '');
+    button.dataset.type = type.name;
+    button.setAttribute('role', 'option');
+    button.setAttribute('aria-selected', pressed ? 'true' : 'false');
+    button.setAttribute('aria-label', `${type.name}${count > 0 ? `, ${count}` : ''}`);
+    button.title = type.name;
+    button.disabled = disabled;
+
+    const emoji = document.createElement('span');
+    emoji.className = 'reactions-widget__emoji';
+    emoji.setAttribute('aria-hidden', 'true');
+    emoji.textContent = type.label;
+    button.appendChild(emoji);
+
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.setPopoverOpen(false);
+      void this.handleClick(type.name);
+    });
+
+    return button;
   }
 
   private createButton(type: ReactionTypeDef): HTMLButtonElement {

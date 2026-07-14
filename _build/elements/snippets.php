@@ -13,6 +13,15 @@ return [
                 'type' => 'textfield',
                 'value' => '',
             ],
+            'layout' => [
+                'type' => 'list',
+                'options' => [
+                    ['text' => 'auto', 'value' => 'auto'],
+                    ['text' => 'picker', 'value' => 'picker'],
+                    ['text' => 'bar', 'value' => 'bar'],
+                ],
+                'value' => 'auto',
+            ],
             'class' => [
                 'type' => 'textfield',
                 'value' => 'modResource',

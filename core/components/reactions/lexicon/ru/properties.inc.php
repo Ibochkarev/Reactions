@@ -2,6 +2,7 @@
 
 $_lang['reactions_prop_set'] = 'Ключ набора реакций';
 $_lang['reactions_prop_types'] = 'Подмножество типов (имена через запятую)';
+$_lang['reactions_prop_layout'] = 'Вид: auto (picker если типов > 3), picker или bar';
 $_lang['reactions_prop_class'] = 'class_key объекта';
 $_lang['reactions_prop_object'] = 'ID объекта';
 $_lang['reactions_prop_context'] = 'Контекст MODX (пусто — текущий)';

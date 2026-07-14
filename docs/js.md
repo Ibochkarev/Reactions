@@ -42,6 +42,7 @@ Fenom:
 | `data-types` | нет | Имена типов через запятую. Атрибут отсутствует → каталог `data-set`. Пустая строка → 0 кнопок. Лишние имена вне набора игнорируются |
 | `data-exclusive` | нет | `1` если набор exclusive (SSR из сниппета) |
 | `data-allow-multiple` | нет | `1` если `reactions_allow_multiple` включён (SSR) |
+| `data-layout` | нет | `auto` (по умолчанию), `picker` или `bar`. `auto` → picker при >3 типах |
 
 URL API берётся в таком порядке:
 
@@ -113,8 +114,8 @@ Reactions.init(container);
 1. Парсинг data-атрибутов.
 2. Запрос CSRF (`GET ?action=csrf`), если токен не передан.
 3. Загрузка счётчиков (`GET ?action=counts`).
-4. Рендер кнопок по набору (`updown`, `github` или `full`).
-5. По клику: optimistic UI → `POST ?action=react` или `DELETE ?action=react`.
+4. Рендер: `bar` (все типы в ряд) или `picker` (чипы + popover).
+5. По клику / выбору в popover: optimistic UI → `POST ?action=react` или `DELETE ?action=react`.
 6. При ошибке: откат состояния, обновление CSRF.
 
 ## Наборы в JS
@@ -135,10 +136,25 @@ Reactions.init(container);
 
 Несколько виджетов на один объект (`class_key` + `object_id` + `context`) синхронизируются событием `reactions:updated` на `document` после успешного POST/DELETE.
 
+## Layout: bar и picker
+
+| Режим | Когда | UI |
+| --- | --- | --- |
+| `bar` | `updown` или `layout=bar` | Все типы в ряд |
+| `picker` | `github` / `full` при `layout=auto`, или `layout=picker` | Чипы с текущими реакциями + кнопка `+` и popover-сетка |
+
+Escape и клик снаружи закрывают popover. Сниппет:
+
+```
+[[!Reactions? &set=`github` &layout=`picker`]]
+[[!Reactions? &set=`full` &layout=`bar`]]
+```
+
 ## Доступность
 
 - Контейнер: `role="group"`, `aria-label="Reactions"`.
-- Кнопки: `aria-pressed`, `aria-label` с именем типа и счётчиком.
+- Кнопки реакций: `aria-pressed`, `aria-label` с именем типа и счётчиком.
+- Picker: кнопка `+` с `aria-expanded` / `aria-haspopup`; popover закрывается по Escape и клику снаружи.
 - Ошибки: `role="alert"`.
 - Клавиатура: Enter и Space активируют кнопку.
 
@@ -149,8 +165,14 @@ Reactions.init(container);
 | Класс | Элемент |
 | --- | --- |
 | `.reactions-widget` | Контейнер (`data-loading`, `aria-busy` при загрузке) |
-| `.reactions-widget__buttons` | Группа кнопок |
-| `.reactions-widget__button` | Кнопка реакции |
+| `.reactions-widget__buttons` | Группа кнопок (layout `bar`) |
+| `.reactions-widget__shell` | Обёртка summary + trigger (layout `picker`) |
+| `.reactions-widget__summary` | Чипы выбранных / ненулевых реакций |
+| `.reactions-widget__trigger` | Кнопка `+` (класс `.is-open` при открытом popover) |
+| `.reactions-widget__popover` | Всплывающая панель |
+| `.reactions-widget__picker` | Сетка типов в popover |
+| `.reactions-widget__picker-button` | Кнопка типа в popover |
+| `.reactions-widget__button` | Кнопка реакции (bar или chip в summary) |
 | `.reactions-widget__button.is-active` / `[aria-pressed="true"]` | Выбранная реакция |
 | `.reactions-widget__emoji` | Эмодзи |
 | `.reactions-widget__count` | Счётчик (скрыт при `0`) |

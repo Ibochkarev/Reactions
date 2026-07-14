@@ -37,14 +37,28 @@ class ReactionsSnippet extends AbstractSnippet
         }
 
         $setTypes = $this->loadFilteredSetTypes($reactions, $setKey, $scriptProperties);
+        $layoutRaw = strtolower((string) ($scriptProperties['layout'] ?? 'auto'));
+        if (!in_array($layoutRaw, ['auto', 'bar', 'picker'], true)) {
+            $layoutRaw = 'auto';
+        }
+        $usePicker = $layoutRaw === 'picker'
+            || ($layoutRaw === 'auto' && count($setTypes) > 3);
+        $layout = $usePicker ? 'picker' : 'bar';
+
         $buttons = '';
         foreach ($setTypes as $type) {
             $name = (string) $type->get('name');
+            $count = (int) ($counts[$name] ?? 0);
+            $active = in_array($name, $userReactions, true) ? 1 : 0;
+            // Picker SSR: only chips that already have votes / user selection (JS adds the + menu).
+            if ($usePicker && $count === 0 && $active === 0) {
+                continue;
+            }
             $buttons .= $this->modx->getChunk($tpl, [
                 'emoji' => (string) $type->get('emoji'),
                 'name' => $name,
-                'count' => (int) ($counts[$name] ?? 0),
-                'active' => in_array($name, $userReactions, true) ? 1 : 0,
+                'count' => $count,
+                'active' => $active,
             ]);
         }
 
@@ -52,8 +66,17 @@ class ReactionsSnippet extends AbstractSnippet
         $setExclusive = $set ? (bool) $set->get('exclusive') : ($setKey === 'updown');
         $allowMultiple = (bool) $reactions->getOption('allowMultiple', false);
 
+        $trigger = '';
+        if ($usePicker) {
+            $trigger = '<button type="button" class="reactions-widget__trigger" aria-haspopup="dialog" aria-expanded="false" aria-label="Add reaction" disabled>'
+                . '<span class="reactions-widget__trigger-icon" aria-hidden="true">+</span>'
+                . '</button>';
+        }
+
         $output = $this->modx->getChunk($tplOuter, [
             'output' => $buttons,
+            'trigger' => $trigger,
+            'layout' => $layout,
             'total' => $metrics['total'],
             'api_url' => (string) $reactions->getOption('apiUrl', ''),
             'csrf' => $csrf,
