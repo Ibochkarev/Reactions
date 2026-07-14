@@ -2,6 +2,8 @@
 
 namespace Reactions\Snippet;
 
+use Reactions\Support\CountFormat;
+
 class ReactionsCountSnippet extends AbstractSnippet
 {
     /** @param array<string, mixed> $scriptProperties */
@@ -17,6 +19,9 @@ class ReactionsCountSnippet extends AbstractSnippet
         $counts = $reactions->getAggregateService()->getCounts($classKey, $objectId, $context);
         if ($typeFilter !== '') {
             $counts = array_intersect_key($counts, [$typeFilter => true]);
+            if (!isset($counts[$typeFilter])) {
+                $counts[$typeFilter] = 0;
+            }
         }
 
         $metrics = $this->metricsFromCounts($counts);
@@ -26,20 +31,18 @@ class ReactionsCountSnippet extends AbstractSnippet
         $pctUp = $total > 0 ? (int) round($likes / $total * 100) : 0;
         $pctDown = $total > 0 ? (int) round($dislikes / $total * 100) : 0;
 
-        $replacements = [
-            '{TOTAL}' => (string) $total,
-            '{LIKES}' => (string) $likes,
-            '{DISLIKES}' => (string) $dislikes,
-            '{RATING}' => (string) $metrics['rating'],
-            '{PCT_UP}' => (string) $pctUp,
-            '{PCT_DOWN}' => (string) $pctDown,
-        ];
-
-        foreach ($counts as $name => $count) {
-            $replacements['{' . $name . '}'] = (string) $count;
-        }
-
-        $output = str_replace(array_keys($replacements), array_values($replacements), $format);
+        $output = CountFormat::apply(
+            $format,
+            [
+                '{TOTAL}' => (string) $total,
+                '{LIKES}' => (string) $likes,
+                '{DISLIKES}' => (string) $dislikes,
+                '{RATING}' => (string) $metrics['rating'],
+                '{PCT_UP}' => (string) $pctUp,
+                '{PCT_DOWN}' => (string) $pctDown,
+            ],
+            $counts,
+        );
 
         return $this->finish($output, $scriptProperties);
     }

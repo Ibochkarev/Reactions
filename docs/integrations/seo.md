@@ -6,9 +6,10 @@
 
 | Параметр | По умолчанию | Описание |
 | --- | --- | --- |
-| `class` | `modResource` | `class_key` объекта |
+| `class` | `modResource` | Класс объекта |
 | `object` | ID текущего ресурса | ID объекта |
 | `context` | ключ текущего контекста | Контекст MODX |
+| `toPlaceholder` | *(пусто)* | Имя плейсхолдера вместо прямого вывода |
 
 ## Логика расчёта
 
@@ -35,43 +36,11 @@
 
 ## Примеры
 
-### На странице ресурса
+JSON-LD появляется только при ненулевых `like`/`up` или `dislike`/`down`. Одни эмодзи вроде `love` без like/dislike разметку не дают.
+
+### Ресурс с голосами
 
 В `<head>` или перед `</body>`:
-
-MODX:
-
-```
-[[!ReactionsSchema]]
-```
-
-Fenom:
-
-```
-{raw ('!ReactionsSchema' | snippet)}
-```
-
-### На товаре miniShop3
-
-MODX:
-
-```
-[[!ReactionsSchema?
-    &class=`msProduct`
-    &object=`[[*id]]`
-]]
-```
-
-Fenom:
-
-```
-{raw ('!ReactionsSchema' | snippet : [
-    'class'  => 'msProduct',
-    'object' => $_modx->resource.id,
-])}
-```
-
-### С явным контекстом
 
 MODX:
 
@@ -83,7 +52,7 @@ MODX:
 ]]
 ```
 
-Fenom:
+Fenom (обязательно `{raw …}`, иначе `<script>` экранируется):
 
 ```
 {raw ('!ReactionsSchema' | snippet : [
@@ -93,7 +62,66 @@ Fenom:
 ])}
 ```
 
-`{raw …}` нужен, если Fenom экранирует HTML: иначе `<script type="application/ld+json">` превратится в текст.
+### Пустой объект — пустой output
+
+Нет like/dislike → сниппет возвращает пустую строку (удобно в условии шаблона):
+
+Fenom:
+
+```
+{set $schema = '!ReactionsSchema' | snippet : [
+    'class'   => 'modResource',
+    'object'  => 999999001,
+    'context' => 'web',
+]}
+{if $schema}{raw $schema}{/if}
+```
+
+### Товар miniShop3
+
+MODX:
+
+```
+[[!ReactionsSchema?
+    &class=`msProduct`
+    &object=`[[*id]]`
+    &context=`web`
+]]
+```
+
+Fenom:
+
+```
+{raw ('!ReactionsSchema' | snippet : [
+    'class'   => 'msProduct',
+    'object'  => $product.id,
+    'context' => 'web',
+])}
+```
+
+### В плейсхолдер
+
+MODX:
+
+```
+[[!ReactionsSchema?
+    &object=`[[*id]]`
+    &context=`web`
+    &toPlaceholder=`rx.schema`
+]]
+[[+rx.schema]]
+```
+
+Fenom:
+
+```
+{'!ReactionsSchema' | snippet : [
+    'object'  => $_modx->resource.id,
+    'context' => 'web',
+    'toPlaceholder' => 'rx.schema',
+]}
+{raw ($_modx->getPlaceholder('rx.schema'))}
+```
 
 ## Связь с основным типом Schema.org
 

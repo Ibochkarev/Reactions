@@ -19,8 +19,11 @@
 | --- | --- |
 | `[[+idx]]` | Порядковый номер (1, 2, 3…) |
 | `[[+object_id]]` | ID объекта |
-| `[[+class_key]]` | `class_key` объекта |
+| `[[+class_key]]` | Класс объекта (в БД: `object_class`) |
+| `[[+pagetitle]]` | Заголовок ресурса / name товара |
+| `[[+uri]]` | URL объекта (или пусто) |
 | `[[+likes]]` | Количество лайков |
+| `[[+dislikes]]` | Количество дизлайков |
 | `[[+total]]` | Сумма всех реакций |
 | `[[+rating]]` | Рейтинг (likes − dislikes) |
 | `[[+trending_score]]` | Оценка trending |
@@ -39,90 +42,83 @@
 
 ## Примеры
 
-### Топ-10 ресурсов за неделю
+Обёртку `<ul class="reactions-top">` ставьте сами: чанк строки выводит `<li>…</li>`.
+
+### Ресурсы: неделя / лимит
 
 MODX:
 
 ```
-[[!TopLiked? &period=`week` &limit=`10`]]
+<ul class="reactions-top">
+[[!TopLiked?
+    &class=`modResource`
+    &period=`week`
+    &limit=`5`
+]]
+</ul>
 ```
 
 Fenom:
 
 ```
+<ul class="reactions-top">
 {'!TopLiked' | snippet : [
+    'class'  => 'modResource',
     'period' => 'week',
-    'limit'  => 10,
+    'limit'  => 5,
 ]}
+</ul>
 ```
 
-### Топ товаров miniShop3
+### Периоды `day` · `week` · `month` · `year` · `all`
+
+Один и тот же вызов, меняете только `period`:
 
 MODX:
 
 ```
+[[!TopLiked? &period=`day` &limit=`5`]]
+[[!TopLiked? &period=`month` &limit=`5`]]
+[[!TopLiked? &period=`all` &limit=`10`]]
+```
+
+Fenom:
+
+```
+{'!TopLiked' | snippet : ['period' => 'day', 'limit' => 5]}
+{'!TopLiked' | snippet : ['period' => 'month', 'limit' => 5]}
+{'!TopLiked' | snippet : ['period' => 'all', 'limit' => 10]}
+```
+
+### Товары miniShop3
+
+MODX:
+
+```
+<ul class="reactions-top">
 [[!TopLiked?
     &class=`msProduct`
     &period=`month`
     &limit=`5`
-    &tpl=`tpl.top.product`
 ]]
+</ul>
 ```
 
 Fenom:
 
 ```
+<ul class="reactions-top">
 {'!TopLiked' | snippet : [
     'class'  => 'msProduct',
     'period' => 'month',
     'limit'  => 5,
-    'tpl'    => 'tpl.top.product',
 ]}
+</ul>
 ```
 
-### Топ за день в плейсхолдер
+Заголовок и URI строки берёт `ObjectLookup` / ресурс STI — короткий `msProduct` подходит.
 
-MODX:
-
-```
-[[!TopLiked? &period=`day` &limit=`5` &toPlaceholder=`topDay`]]
-<ul>[[+topDay]]</ul>
-```
-
-Fenom:
-
-```
-{'!TopLiked' | snippet : [
-    'period' => 'day',
-    'limit'  => 5,
-    'toPlaceholder' => 'topDay',
-]}
-<ul>{$_modx->getPlaceholder('topDay')}</ul>
-```
-
-### Топ комментариев Tickets
-
-MODX:
-
-```
-[[!TopLiked?
-    &class=`TicketComment`
-    &period=`month`
-    &limit=`5`
-]]
-```
-
-Fenom:
-
-```
-{'!TopLiked' | snippet : [
-    'class'  => 'TicketComment',
-    'period' => 'month',
-    'limit'  => 5,
-]}
-```
-
-### Только контекст `web`
+### Фильтр контекста `web`
 
 MODX:
 
@@ -144,7 +140,31 @@ Fenom:
 ]}
 ```
 
-### Сайдбар с кастомным чанком
+### В плейсхолдер
+
+MODX:
+
+```
+[[!TopLiked?
+    &period=`all`
+    &limit=`3`
+    &toPlaceholder=`rx.top`
+]]
+<ul class="reactions-top">[[+rx.top]]</ul>
+```
+
+Fenom:
+
+```
+{'!TopLiked' | snippet : [
+    'period' => 'all',
+    'limit'  => 3,
+    'toPlaceholder' => 'rx.top',
+]}
+<ul class="reactions-top">{$_modx->getPlaceholder('rx.top')}</ul>
+```
+
+### Свой чанк строки
 
 MODX:
 
@@ -168,4 +188,12 @@ Fenom:
     'tpl'    => 'tpl.top.row',
 ]}
 </ul>
+```
+
+### Комментарии Tickets
+
+На MODX 3 не проверено:
+
+```
+[[!TopLiked? &class=`TicketComment` &period=`month` &limit=`5`]]
 ```

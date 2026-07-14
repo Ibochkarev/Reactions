@@ -19,139 +19,125 @@
 | --- | --- |
 | `[[+idx]]` | Порядковый номер |
 | `[[+object_id]]` | ID объекта |
-| `[[+class_key]]` | `class_key` объекта |
+| `[[+class_key]]` | Класс объекта (в БД: `object_class`) |
+| `[[+pagetitle]]` | Заголовок ресурса / name товара |
+| `[[+uri]]` | URL объекта (или пусто) |
 | `[[+likes]]` | Количество лайков |
+| `[[+dislikes]]` | Количество дизлайков |
 | `[[+total]]` | Сумма всех реакций |
 | `[[+rating]]` | Рейтинг (likes − dislikes) |
 | `[[+trending_score]]` | Оценка trending |
 
 ## Примеры
 
-### Топ-5 ресурсов по рейтингу
+Сортировка по `rating` (= likes − dislikes). Те же периоды, что у `TopLiked`: `day` / `week` / `month` / `year` / `all`.
+
+### Ресурсы за выбранный период
 
 MODX:
 
 ```
-[[!TopRated? &limit=`5`]]
+<ul class="reactions-top">
+[[!TopRated?
+    &class=`modResource`
+    &period=`week`
+    &limit=`5`
+]]
+</ul>
 ```
 
 Fenom:
 
 ```
-{'!TopRated' | snippet : ['limit' => 5]}
-```
-
-### Лучшие статьи за месяц
-
-MODX:
-
-```
-[[!TopRated? &period=`month` &limit=`10` &tpl=`tpl.top.article`]]
-```
-
-Fenom:
-
-```
+<ul class="reactions-top">
 {'!TopRated' | snippet : [
-    'period' => 'month',
-    'limit'  => 10,
-    'tpl'    => 'tpl.top.article',
+    'class'  => 'modResource',
+    'period' => 'week',
+    'limit'  => 5,
 ]}
+</ul>
 ```
 
-### Топ товаров
+### Месяц и год
 
 MODX:
 
 ```
+[[!TopRated? &period=`month` &limit=`10`]]
+[[!TopRated? &period=`year` &limit=`10`]]
+```
+
+Fenom:
+
+```
+{'!TopRated' | snippet : ['period' => 'month', 'limit' => 10]}
+{'!TopRated' | snippet : ['period' => 'year', 'limit' => 10]}
+```
+
+### Товары miniShop3
+
+MODX:
+
+```
+<ul class="reactions-top">
 [[!TopRated?
     &class=`msProduct`
     &period=`year`
     &limit=`8`
 ]]
+</ul>
 ```
 
 Fenom:
 
 ```
+<ul class="reactions-top">
 {'!TopRated' | snippet : [
     'class'  => 'msProduct',
     'period' => 'year',
     'limit'  => 8,
 ]}
+</ul>
 ```
 
-### Блок «Лучшее за год»
-
-MODX:
-
-```
-<section class="top-rated">
-    <h2>Лучшее за год</h2>
-    <ol>
-    [[!TopRated? &period=`year` &limit=`10`]]
-    </ol>
-</section>
-```
-
-Fenom:
-
-```
-<section class="top-rated">
-    <h2>Лучшее за год</h2>
-    <ol>
-    {'!TopRated' | snippet : [
-        'period' => 'year',
-        'limit'  => 10,
-    ]}
-    </ol>
-</section>
-```
-
-### Рейтинг комментариев
+### В плейсхолдер + свой чанк
 
 MODX:
 
 ```
 [[!TopRated?
-    &class=`TicketComment`
-    &period=`week`
+    &period=`all`
     &limit=`3`
-]]
-```
-
-Fenom:
-
-```
-{'!TopRated' | snippet : [
-    'class'  => 'TicketComment',
-    'period' => 'week',
-    'limit'  => 3,
-]}
-```
-
-### С кастомным чанком и плейсхолдером
-
-MODX:
-
-```
-[[!TopRated?
-    &limit=`5`
     &tpl=`myTopRatedRow`
-    &toPlaceholder=`topRated`
+    &toPlaceholder=`rx.rated`
 ]]
-[[+topRated]]
+<ul class="reactions-top">[[+rx.rated]]</ul>
 ```
 
 Fenom:
 
 ```
 {'!TopRated' | snippet : [
-    'limit' => 5,
-    'tpl'   => 'myTopRatedRow',
-    'toPlaceholder' => 'topRated',
+    'period' => 'all',
+    'limit'  => 3,
+    'tpl' => 'myTopRatedRow',
+    'toPlaceholder' => 'rx.rated',
 ]}
-{$_modx->getPlaceholder('topRated')}
+<ul class="reactions-top">{$_modx->getPlaceholder('rx.rated')}</ul>
+```
+
+### Контекст `web`
+
+```
+[[!TopRated? &period=`all` &context=`web` &limit=`20`]]
+```
+
+### Комментарии Tickets
+
+На MODX 3 не проверено:
+
+```
+[[!TopRated? &class=`TicketComment` &period=`week` &limit=`3`]]
 ```
 
 ## TopLiked vs TopRated

@@ -49,7 +49,7 @@ class StatsCommand extends AbstractCommand
         foreach ($rows as $row) {
             $this->writeln(sprintf(
                 '  %s#%d (%s)  likes=%d  total=%d  trending=%.2f',
-                $row->get('class_key'),
+                $row->get('object_class'),
                 (int) $row->get('object_id'),
                 $row->get('context'),
                 (int) $row->get('likes'),

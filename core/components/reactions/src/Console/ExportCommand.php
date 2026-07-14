@@ -17,7 +17,7 @@ class ExportCommand extends AbstractCommand
             $typeId = (int) $reaction->get('type_id');
             $items[] = [
                 'id' => (int) $reaction->get('id'),
-                'class_key' => $reaction->get('class_key'),
+                'class_key' => $reaction->get('object_class'),
                 'object_id' => (int) $reaction->get('object_id'),
                 'context' => $reaction->get('context'),
                 'type_id' => $typeId,
@@ -64,7 +64,7 @@ class ExportCommand extends AbstractCommand
 
         $classKey = $this->getStringOption('class-key');
         if ($classKey !== '') {
-            $criteria['class_key'] = $classKey;
+            $criteria['object_class'] = $classKey;
         }
 
         $objectId = $this->getIntOption('object-id');

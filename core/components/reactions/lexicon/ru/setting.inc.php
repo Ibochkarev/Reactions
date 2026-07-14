@@ -36,6 +36,3 @@ $_lang['setting_reactions_notify_authors_desc'] = 'Отправлять сооб
 
 $_lang['setting_reactions_block_bots'] = 'Блокировать ботов';
 $_lang['setting_reactions_block_bots_desc'] = 'Отклонять реакции от известных краулеров и ботов.';
-
-$_lang['setting_reactions_allowed_classes'] = 'Разрешённые class_key';
-$_lang['setting_reactions_allowed_classes_desc'] = 'Список class_key через запятую, на которые можно ставить реакции.';

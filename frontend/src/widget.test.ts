@@ -3,6 +3,7 @@ import * as api from './api';
 import {
   ReactionsWidget,
   getReactionTypes,
+  isExclusiveMode,
   parseConfig,
   resolveApiUrl,
   resolveApiUrlFromScript,
@@ -101,7 +102,33 @@ describe('parseConfig', () => {
       context: 'web',
       csrf: 'csrf-token',
       types: undefined,
+      exclusive: true,
+      allowMultiple: false,
     });
+  });
+
+  it('reads exclusive / allow-multiple flags', () => {
+    appendReactionsScript();
+    const el = createHost({
+      'data-set': 'github',
+      'data-exclusive': '0',
+      'data-allow-multiple': '1',
+    });
+    const config = parseConfig(el);
+
+    expect(config?.exclusive).toBe(false);
+    expect(config?.allowMultiple).toBe(true);
+    expect(isExclusiveMode(config!)).toBe(false);
+  });
+
+  it('treats github as exclusive when allow-multiple is off', () => {
+    appendReactionsScript();
+    const el = createHost({ 'data-set': 'github', 'data-exclusive': '0' });
+    const config = parseConfig(el)!;
+
+    expect(config.exclusive).toBe(false);
+    expect(config.allowMultiple).toBe(false);
+    expect(isExclusiveMode(config)).toBe(true);
   });
 
   it('parses data-types into config', () => {
@@ -147,6 +174,7 @@ describe('ReactionsWidget', () => {
     }
     vi.clearAllMocks();
 
+    mockedApi.getCsrf.mockResolvedValue('csrf-live');
     mockedApi.fetchCounts.mockResolvedValue({
       class_key: 'modResource',
       object_id: 42,
@@ -179,6 +207,29 @@ describe('ReactionsWidget', () => {
     const dislike = buttons[1];
     expect(dislike.getAttribute('aria-pressed')).toBe('false');
     expect(dislike.querySelector('.reactions-widget__count')?.textContent).toBe('1');
+    expect(dislike.querySelector('.reactions-widget__count')?.hidden).toBe(false);
+  });
+
+  it('hides zero counts on buttons', async () => {
+    mockedApi.fetchCounts.mockResolvedValue({
+      class_key: 'modResource',
+      object_id: 42,
+      context: 'web',
+      counts: { like: 0, dislike: 2 },
+      total: 2,
+      user_reaction: [],
+    });
+
+    appendReactionsScript();
+    const el = createHost();
+    const widget = new ReactionsWidget(el, parseConfig(el)!);
+    await widget.init();
+
+    const likeCount = el.querySelector('[data-type="like"] .reactions-widget__count');
+    const dislikeCount = el.querySelector('[data-type="dislike"] .reactions-widget__count');
+    expect(likeCount?.hidden).toBe(true);
+    expect(dislikeCount?.hidden).toBe(false);
+    expect(dislikeCount?.textContent).toBe('2');
   });
 
   it('applies optimistic update and syncs after react', async () => {
@@ -198,13 +249,14 @@ describe('ReactionsWidget', () => {
 
     await widget.handleClick('dislike');
 
+    expect(mockedApi.getCsrf).toHaveBeenCalled();
     expect(mockedApi.react).toHaveBeenCalledWith(
       config.api,
       expect.objectContaining({
         type: 'dislike',
         class_key: 'modResource',
         object_id: 42,
-        csrf: 'csrf-token',
+        csrf: 'csrf-live',
         nonce: 'test-nonce',
       }),
     );
@@ -225,9 +277,39 @@ describe('ReactionsWidget', () => {
 
     await widget.handleClick('like');
 
-    expect(mockedApi.unreact).toHaveBeenCalled();
+    // Failed mutation + CSRF retry
+    expect(mockedApi.unreact).toHaveBeenCalledTimes(2);
     expect(el.querySelector('[data-type="like"]')?.getAttribute('aria-pressed')).toBe('true');
     expect(el.querySelector('[data-type="like"] .reactions-widget__count')?.textContent).toBe('3');
+  });
+
+  it('retries once after refreshing CSRF on mutation failure', async () => {
+    mockedApi.react
+      .mockRejectedValueOnce(new Error('Invalid or missing CSRF token'))
+      .mockResolvedValueOnce({
+        action: 'added',
+        counts: { like: 4, dislike: 1 },
+        total: 5,
+        user_reaction: ['like', 'dislike'],
+        type: 'dislike',
+      });
+    mockedApi.getCsrf
+      .mockResolvedValueOnce('csrf-init')
+      .mockResolvedValueOnce('csrf-retry');
+
+    appendReactionsScript();
+    const el = createHost();
+    const config = parseConfig(el)!;
+    const widget = new ReactionsWidget(el, config);
+    await widget.init();
+
+    await widget.handleClick('dislike');
+
+    expect(mockedApi.react).toHaveBeenCalledTimes(2);
+    expect(mockedApi.react.mock.calls[1][1]).toEqual(
+      expect.objectContaining({ csrf: 'csrf-retry', type: 'dislike' }),
+    );
+    expect(el.querySelector('[data-type="dislike"]')?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('uses github and full set types when configured', () => {

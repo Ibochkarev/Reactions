@@ -30,7 +30,12 @@ class Router
         } catch (\Throwable $e) {
             $this->reactions->modx->log(
                 \MODX\Revolution\modX::LOG_LEVEL_ERROR,
-                '[Reactions API] ' . $e->getMessage()
+                sprintf(
+                    '[Reactions API] %s in %s:%d',
+                    $e->getMessage(),
+                    $e->getFile(),
+                    $e->getLine()
+                )
             );
             JsonResponse::error('Internal server error', 'internal_error', 500);
         }

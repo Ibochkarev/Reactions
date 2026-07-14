@@ -46,10 +46,10 @@ class TopController extends AbstractController
     private function formatAggregate(ReactionAggregate $aggregate): array
     {
         return [
-            'class_key' => $aggregate->get('class_key'),
+            'class_key' => $aggregate->get('object_class'),
             'object_id' => (int) $aggregate->get('object_id'),
             'context' => $aggregate->get('context'),
-            'counts' => $aggregate->get('counts') ?? [],
+            'counts' => $this->reactions->getAggregateService()->decodeCounts($aggregate->get('counts')),
             'total' => (int) $aggregate->get('total'),
             'likes' => (int) $aggregate->get('likes'),
             'dislikes' => (int) $aggregate->get('dislikes'),

@@ -56,9 +56,4 @@ return [
         'value' => true,
         'area' => 'reactions_security',
     ],
-    'allowed_classes' => [
-        'xtype' => 'textfield',
-        'value' => 'modResource,msProduct,TicketComment',
-        'area' => 'reactions_security',
-    ],
 ];

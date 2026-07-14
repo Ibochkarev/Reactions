@@ -91,13 +91,34 @@ class ReactionsPackage
             'target' => "return MODX_ASSETS_PATH . 'components/';",
         ]);
 
-        // Add resolvers into vehicle
-        $resolvers = scandir($this->config['resolvers']);
-        foreach ($resolvers as $resolver) {
-            if (in_array($resolver[0], ['_', '.'])) {
+        // Resolvers: tables before presets (scandir alone would run presets.php first).
+        $resolverDir = $this->config['resolvers'];
+        $preferredResolvers = [
+            'tables.php',
+            'presets.php',
+            'symlinks.php',
+            'resolver_metrics.php',
+        ];
+        $foundResolvers = [];
+        foreach (scandir($resolverDir) ?: [] as $resolver) {
+            if ($resolver[0] === '.' || $resolver[0] === '_' || !str_ends_with($resolver, '.php')) {
                 continue;
             }
-            if ($vehicle->resolve('php', ['source' => $this->config['resolvers'] . $resolver])) {
+            $foundResolvers[] = $resolver;
+        }
+        $orderedResolvers = [];
+        foreach ($preferredResolvers as $resolver) {
+            if (in_array($resolver, $foundResolvers, true)) {
+                $orderedResolvers[] = $resolver;
+            }
+        }
+        foreach ($foundResolvers as $resolver) {
+            if (!in_array($resolver, $orderedResolvers, true)) {
+                $orderedResolvers[] = $resolver;
+            }
+        }
+        foreach ($orderedResolvers as $resolver) {
+            if ($vehicle->resolve('php', ['source' => $resolverDir . $resolver])) {
                 $this->modx->log(modX::LOG_LEVEL_INFO, 'Added resolver ' . preg_replace('#\.php$#', '', $resolver));
             }
         }
@@ -191,32 +212,46 @@ class ReactionsPackage
 
 
     /**
-     * Install nodejs and update assets
+     * Build the TypeScript widget (frontend/) into assets/…/js/web/
      */
     protected function assets()
     {
-        $output = [];
-        if (!file_exists($this->config['build'] . 'node_modules')) {
-            putenv('PATH=' . trim(shell_exec('echo $PATH')) . ':' . dirname(MODX_BASE_PATH) . '/');
-            if (file_exists($this->config['build'] . 'package.json')) {
-                $this->modx->log(modX::LOG_LEVEL_INFO, 'Trying to install or update nodejs dependencies');
-                $output = [
-                    shell_exec('cd ' . $this->config['build'] . ' && npm config set scripts-prepend-node-path true && npm install'),
-                ];
-            }
-            if (file_exists($this->config['build'] . 'gulpfile.js')) {
-                $output = array_merge($output, [
-                    shell_exec('cd ' . $this->config['build'] . ' && npm link gulp'),
-                    shell_exec('cd ' . $this->config['build'] . ' && gulp copy'),
-                ]);
-            }
-            if ($output) {
-                $this->modx->log(xPDO::LOG_LEVEL_INFO, implode("\n", array_map('trim', $output)));
-            }
+        $frontend = $this->config['root'] . 'frontend/';
+        if (!is_file($frontend . 'package.json')) {
+            $this->modx->log(modX::LOG_LEVEL_WARN, 'frontend/package.json not found, skipping widget build');
+
+            return;
         }
-        if (file_exists($this->config['build'] . 'gulpfile.js')) {
-            $output = shell_exec('cd ' . $this->config['build'] . ' && gulp default 2>&1');
-            $this->modx->log(xPDO::LOG_LEVEL_INFO, 'Compile scripts and styles ' . trim($output));
+
+        $path = getenv('PATH') ?: '';
+        $extra = dirname(MODX_BASE_PATH);
+        if ($extra && strpos($path, $extra) === false) {
+            putenv('PATH=' . $path . ':' . $extra);
+        }
+
+        $npm = trim((string) shell_exec('command -v npm 2>/dev/null'));
+        if ($npm === '') {
+            $this->modx->log(
+                modX::LOG_LEVEL_WARN,
+                'npm not found: widget not rebuilt. Run: cd frontend && npm install && npm run build'
+            );
+
+            return;
+        }
+
+        if (!is_dir($frontend . 'node_modules')) {
+            $this->modx->log(modX::LOG_LEVEL_INFO, 'Installing frontend npm dependencies…');
+            $install = shell_exec('cd ' . escapeshellarg($frontend) . ' && npm install 2>&1');
+            $this->modx->log(modX::LOG_LEVEL_INFO, trim((string) $install));
+        }
+
+        $this->modx->log(modX::LOG_LEVEL_INFO, 'Building frontend widget (vite)…');
+        $build = shell_exec('cd ' . escapeshellarg($frontend) . ' && npm run build 2>&1');
+        $this->modx->log(modX::LOG_LEVEL_INFO, 'Widget build: ' . trim((string) $build));
+
+        $js = $this->config['assets'] . 'js/web/reactions.js';
+        if (!is_file($js)) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, 'Widget build failed: missing ' . $js);
         }
     }
 

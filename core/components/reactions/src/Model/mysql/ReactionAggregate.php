@@ -1,21 +1,23 @@
 <?php
-
 namespace Reactions\Model\mysql;
+
+use xPDO\xPDO;
 
 class ReactionAggregate extends \Reactions\Model\ReactionAggregate
 {
+
     public static $metaMap = array (
         'package' => 'Reactions\\Model',
         'version' => '3.0',
         'table' => 'reactions_aggregates',
         'extends' => 'xPDO\\Om\\xPDOSimpleObject',
-        'tableMeta' =>
+        'tableMeta' => 
         array (
             'engine' => 'InnoDB',
         ),
-        'fields' =>
+        'fields' => 
         array (
-            'class_key' => '',
+            'object_class' => '',
             'object_id' => 0,
             'context' => 'web',
             'counts' => '{}',
@@ -26,9 +28,9 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
             'trending_score' => 0.0,
             'updated_at' => 0,
         ),
-        'fieldMeta' =>
+        'fieldMeta' => 
         array (
-            'class_key' =>
+            'object_class' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '100',
@@ -36,7 +38,7 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'null' => false,
                 'default' => '',
             ),
-            'object_id' =>
+            'object_id' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -45,7 +47,7 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'null' => false,
                 'default' => 0,
             ),
-            'context' =>
+            'context' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '100',
@@ -53,14 +55,14 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'null' => false,
                 'default' => 'web',
             ),
-            'counts' =>
+            'counts' => 
             array (
                 'dbtype' => 'text',
                 'phptype' => 'json',
                 'null' => false,
                 'default' => '{}',
             ),
-            'total' =>
+            'total' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -69,7 +71,7 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'null' => false,
                 'default' => 0,
             ),
-            'likes' =>
+            'likes' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -78,7 +80,7 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'null' => false,
                 'default' => 0,
             ),
-            'dislikes' =>
+            'dislikes' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -87,7 +89,7 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'null' => false,
                 'default' => 0,
             ),
-            'rating' =>
+            'rating' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '11',
@@ -95,15 +97,15 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'null' => false,
                 'default' => 0,
             ),
-            'trending_score' =>
+            'trending_score' => 
             array (
                 'dbtype' => 'decimal',
                 'precision' => '16,6',
                 'phptype' => 'float',
                 'null' => false,
-                'default' => 0,
+                'default' => 0.0,
             ),
-            'updated_at' =>
+            'updated_at' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -113,29 +115,29 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                 'default' => 0,
             ),
         ),
-        'indexes' =>
+        'indexes' => 
         array (
-            'object_unique' =>
+            'object_unique' => 
             array (
                 'alias' => 'object_unique',
                 'primary' => false,
                 'unique' => true,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'class_key' =>
+                    'object_class' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'object_id' =>
+                    'object_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'context' =>
+                    'context' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -143,15 +145,15 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                     ),
                 ),
             ),
-            'likes' =>
+            'likes' => 
             array (
                 'alias' => 'likes',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'likes' =>
+                    'likes' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -159,15 +161,15 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                     ),
                 ),
             ),
-            'rating' =>
+            'rating' => 
             array (
                 'alias' => 'rating',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'rating' =>
+                    'rating' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -175,15 +177,15 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                     ),
                 ),
             ),
-            'trending' =>
+            'trending' => 
             array (
                 'alias' => 'trending',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'trending_score' =>
+                    'trending_score' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -191,21 +193,21 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
                     ),
                 ),
             ),
-            'class_likes' =>
+            'class_likes' => 
             array (
                 'alias' => 'class_likes',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'class_key' =>
+                    'object_class' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'likes' =>
+                    'likes' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -215,4 +217,5 @@ class ReactionAggregate extends \Reactions\Model\ReactionAggregate
             ),
         ),
     );
+
 }

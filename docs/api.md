@@ -58,7 +58,7 @@ GET  /assets/components/reactions/api.php?action=admin/types
 | `bad_request` | 400 | Пустой `action` |
 | `not_found` | 404 | Неизвестный action / объект / тип / набор |
 | `method_not_allowed` | 405 | Неверный HTTP-метод для endpoint |
-| `forbidden` | 403 | CSRF/Origin/nonce, бан, бот, allowlist class_key, тип вне набора/`full_types`, отмена плагином |
+| `forbidden` | 403 | CSRF/Origin/nonce, бан, бот, тип вне набора/`full_types`, отмена плагином |
 | `auth_required` | 401 | Admin без `reactions_manage`; стратегия `auth_only` для гостя |
 | `rate_limit` | 429 | Превышен `reactions_rate_limit` |
 | `internal_error` | 500 | Непойманное исключение (детали в `error.log`) |
@@ -169,11 +169,10 @@ curl -b cookies.txt \
 2. CSRF совпадает с сессией.
 3. Nonce ещё не использован.
 4. Identity + антибот + бан + rate limit.
-5. `class_key` в `reactions_allowed_classes` (если список не пуст).
-6. Объект существует в xPDO.
-7. Тип активен; входит в набор `set`.
-8. Для `set=full`: тип в `reactions_full_types`, если настройка не пуста.
-9. `OnBeforeReaction` (можно отменить).
+5. Объект существует: короткий `class_key` (например `msProduct`) резолвится в FQCN / STI, затем проверка по `object_id`.
+6. Тип активен; входит в набор `set`.
+7. Для `set=full`: тип в `reactions_full_types`, если настройка не пуста.
+8. `OnBeforeReaction` (можно отменить).
 
 ### Пример
 
@@ -544,7 +543,6 @@ curl -b mgr-cookies.txt \
 | Origin | Сравнение host `Origin` или `Referer` с host `site_url`; без заголовков — отказ |
 | Rate limit | `reactions_rate_limit` / `reactions_rate_limit_window` на fingerprint |
 | Боты | `reactions_block_bots` + детектор User-Agent |
-| Allowlist | `reactions_allowed_classes` |
 | Баны | Таблица `ReactionBan` по IP-hash / user_id |
 | Права | Admin только с `reactions_manage` |
 

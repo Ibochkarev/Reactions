@@ -77,17 +77,63 @@ like,love,fire,star,clap,rocket,heart_eyes
 | `[[+total]]` | Сумма всех реакций |
 | `[[+api_url]]` | URL API; стандартный outer пишет в `data-api`. JS также умеет вывести API из пути `reactions.js` или `Reactions.config.api` |
 | `[[+csrf]]` | CSRF-токен для AJAX |
-| `[[+class_key]]` | `class_key` объекта |
+| `[[+class_key]]` | Класс объекта (как в API; в БД — `object_class`) |
 | `[[+object_id]]` | ID объекта |
 | `[[+set]]` | Ключ набора |
 | `[[+context]]` | Контекст |
 | `[[+types]]` | Имена показанных типов через запятую (`data-types` для JS) |
+| `[[+exclusive]]` | `1` / `0` — набор exclusive (`data-exclusive`) |
+| `[[+allow_multiple]]` | `1` / `0` — настройка `reactions_allow_multiple` (`data-allow-multiple`) |
 
-Для работы JS-виджета контейнер должен иметь класс `reactions-widget` и data-атрибуты объекта (`data-class-key`, `data-object-id`). `data-api` не обязателен. Подробнее — в [js.md](../js.md).
+Для JS контейнеру нужны класс `reactions-widget` и data-атрибуты объекта (`data-class-key`, `data-object-id`). `data-api` не обязателен. См. [js.md](../js.md).
 
 ## Примеры
 
-### Реакции на текущей странице (набор GitHub)
+Примеры в синтаксисе MODX и Fenom.
+
+### Набор из `reactions_default_set` (без `&set`)
+
+MODX:
+
+```
+[[!Reactions]]
+```
+
+Fenom:
+
+```
+{'!Reactions' | snippet : [
+    'class'   => 'modResource',
+    'object'  => $_modx->resource.id,
+    'context' => $_modx->context.key,
+]}
+```
+
+### Exclusive: `updown`
+
+MODX:
+
+```
+[[!Reactions?
+    &set=`updown`
+    &class=`modResource`
+    &object=`[[*id]]`
+    &context=`web`
+]]
+```
+
+Fenom:
+
+```
+{'!Reactions' | snippet : [
+    'set'     => 'updown',
+    'class'   => 'modResource',
+    'object'  => $_modx->resource.id,
+    'context' => 'web',
+]}
+```
+
+### Восемь кнопок: `github`
 
 MODX:
 
@@ -101,27 +147,7 @@ Fenom:
 {'!Reactions' | snippet : ['set' => 'github']}
 ```
 
-### Набор up/down на конкретном ресурсе
-
-MODX:
-
-```
-[[!Reactions?
-    &set=`updown`
-    &object=`42`
-]]
-```
-
-Fenom:
-
-```
-{'!Reactions' | snippet : [
-    'set' => 'updown',
-    'object' => 42,
-]}
-```
-
-### Набор `full`
+### До 24 кнопок: `full`
 
 MODX:
 
@@ -135,12 +161,17 @@ Fenom:
 {'!Reactions' | snippet : ['set' => 'full']}
 ```
 
-Подмножество через системную настройку `reactions_full_types` (например `like,love,fire,star`) или параметр `types`:
+Без `&types=` для `full` берётся системная `reactions_full_types`; пустая настройка → все 24 типа.
+
+### Подмножество через `&types=` на `full`
 
 MODX:
 
 ```
-[[!Reactions? &set=`full` &types=`like,love,fire,star`]]
+[[!Reactions?
+    &set=`full`
+    &types=`like,love,fire,star,clap`
+]]
 ```
 
 Fenom:
@@ -148,17 +179,128 @@ Fenom:
 ```
 {'!Reactions' | snippet : [
     'set'   => 'full',
-    'types' => 'like,love,fire,star',
+    'types' => 'like,love,fire,star,clap',
 ]}
 ```
 
-Приоритет: `&types=` → иначе `reactions_full_types` (только для `full`) → все типы набора.
+Приоритет фильтра: `&types=` → иначе `reactions_full_types` (только `full`) → весь набор. В `data-types` попадают только реально показанные имена.
+
+### Отсев неизвестных имён в `&types=`
+
+`not_a_type` отбрасывается; остаются типы из набора.
+
+MODX:
+
+```
+[[!Reactions?
+    &set=`full`
+    &types=`like,angry,not_a_type`
+]]
+```
+
+Fenom:
+
+```
+{'!Reactions' | snippet : [
+    'set'   => 'full',
+    'types' => 'like,angry,not_a_type',
+]}
+```
+
+Результат: две кнопки — `like`, `angry`.
+
+### `&types=` на `github`: имена вне набора игнорируются
+
+`fire` есть в `full`, но не в `github` → на экране только `like` и `love`.
+
+MODX:
+
+```
+[[!Reactions?
+    &set=`github`
+    &types=`like,love,fire`
+]]
+```
+
+Fenom:
+
+```
+{'!Reactions' | snippet : [
+    'set'   => 'github',
+    'types' => 'like,love,fire',
+]}
+```
+
+### Товар miniShop3
+
+Короткий класс `msProduct` и ID товара. Сервер сам резолвит FQCN.
+
+MODX (карточка / шаблон товара):
+
+```
+[[!Reactions?
+    &set=`github`
+    &class=`msProduct`
+    &object=`[[*id]]`
+    &context=`web`
+]]
+```
+
+Fenom:
+
+```
+{'!Reactions' | snippet : [
+    'set'     => 'github',
+    'class'   => 'msProduct',
+    'object'  => $product.id,
+    'context' => 'web',
+]}
+```
+
+То же с exclusive:
+
+```
+[[!Reactions?
+    &set=`updown`
+    &class=`msProduct`
+    &object=`[[+id]]`
+]]
+```
+
+### Комментарий Tickets
+
+На MODX 3 пакет Tickets пока не проверен. Схема вызова:
+
+MODX (чанк строки комментария):
+
+```
+[[!Reactions?
+    &class=`TicketComment`
+    &object=`[[+id]]`
+    &set=`updown`
+]]
+```
+
+Fenom:
+
+```
+{'!Reactions' | snippet : [
+    'class'  => 'TicketComment',
+    'object' => $comment.id,
+    'set'    => 'updown',
+]}
+```
+
 ### Вывод в плейсхолдер
 
 MODX:
 
 ```
-[[!Reactions? &set=`github` &toPlaceholder=`pageReactions`]]
+[[!Reactions?
+    &set=`updown`
+    &object=`[[*id]]`
+    &toPlaceholder=`pageReactions`
+]]
 [[+pageReactions]]
 ```
 
@@ -166,13 +308,14 @@ Fenom:
 
 ```
 {'!Reactions' | snippet : [
-    'set' => 'github',
+    'set' => 'updown',
+    'object' => $_modx->resource.id,
     'toPlaceholder' => 'pageReactions',
 ]}
 {$_modx->getPlaceholder('pageReactions')}
 ```
 
-### Свой чанк
+### Свои чанки кнопки и обёртки
 
 MODX:
 
@@ -194,51 +337,7 @@ Fenom:
 ]}
 ```
 
-### Реакции на комментарий Tickets
-
-MODX (в чанке строки комментария):
-
-```
-[[!Reactions?
-    &class=`TicketComment`
-    &object=`[[+id]]`
-    &set=`updown`
-]]
-```
-
-Fenom (внутри цикла по комментариям):
-
-```
-{'!Reactions' | snippet : [
-    'class'  => 'TicketComment',
-    'object' => $comment.id,
-    'set'    => 'updown',
-]}
-```
-
-### Реакции на товар miniShop3
-
-MODX:
-
-```
-[[!Reactions?
-    &class=`msProduct`
-    &object=`[[*id]]`
-    &set=`github`
-    &context=`web`
-]]
-```
-
-Fenom:
-
-```
-{'!Reactions' | snippet : [
-    'class'   => 'msProduct',
-    'object'  => $_modx->resource.id,
-    'set'     => 'github',
-    'context' => 'web',
-]}
-```
+В `tplOuter` сохраните класс `reactions-widget` и data-атрибуты (`data-class-key`, `data-object-id`, `data-exclusive`, `data-allow-multiple`…). См. [js.md](../js.md).
 
 ## Поведение кнопок
 

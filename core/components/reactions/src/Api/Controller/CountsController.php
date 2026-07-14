@@ -4,6 +4,7 @@ namespace Reactions\Api\Controller;
 
 use Reactions\Api\JsonResponse;
 use Reactions\Exception\ReactionException;
+use Reactions\Support\Counts;
 
 class CountsController extends AbstractController
 {
@@ -32,7 +33,7 @@ class CountsController extends AbstractController
                 'object_id' => $objectId,
                 'context' => $context,
                 'counts' => $counts,
-                'total' => array_sum($counts),
+                'total' => Counts::total($counts),
                 'user_reaction' => $userReactions,
             ],
         ]);

@@ -1,16 +1,16 @@
 # Сниппет ReactionsCount
 
-Выводит текстовые счётчики реакций без кнопок. Подходит для карточек, списков и мета-строк.
+Текстовые счётчики без кнопок — для карточек, списков, мета-строк.
 
 ## Параметры
 
 | Параметр | По умолчанию | Описание |
 | --- | --- | --- |
-| `class` | `modResource` | `class_key` объекта |
+| `class` | `modResource` | Класс объекта (`class_key` в API) |
 | `object` | ID текущего ресурса | ID объекта |
 | `context` | ключ текущего контекста | Контекст MODX |
-| `format` | `{TOTAL}` | Строка формата с плейсхолдерами |
-| `type` | *(пусто)* | Фильтр по имени типа (`like`, `love`…) |
+| `format` | `{TOTAL}` | Строка с плейсхолдерами |
+| `type` | *(пусто)* | Узкий фильтр по имени типа (`like`, `love`…) |
 | `toPlaceholder` | *(пусто)* | Имя плейсхолдера вместо прямого вывода |
 
 ## Плейсхолдеры формата
@@ -21,13 +21,13 @@
 | `{LIKES}` | Сумма `like` + `up` |
 | `{DISLIKES}` | Сумма `dislike` + `down` |
 | `{RATING}` | `LIKES − DISLIKES` |
-| `{PCT_UP}` | Процент лайков от общего числа (0–100) |
-| `{PCT_DOWN}` | Процент дизлайков от общего числа (0–100) |
-| `{like}`, `{love}`, `{funny}`… | Счётчик конкретного типа по имени |
+| `{PCT_UP}` | Доля лайков от общего, 0–100 |
+| `{PCT_DOWN}` | Доля дизлайков от общего, 0–100 |
+| `{like}`, `{love}`, `{funny}`… | Счётчик типа. Нет данных → `0`, не сырой `{love}` |
 
 ## Примеры
 
-### Общее число реакций
+### По умолчанию: только `{TOTAL}`
 
 MODX:
 
@@ -38,10 +38,91 @@ MODX:
 Fenom:
 
 ```
-{'!ReactionsCount' | snippet}
+{'!ReactionsCount' | snippet : [
+    'class'  => 'modResource',
+    'object' => $_modx->resource.id,
+]}
 ```
 
-Результат: `15`
+Пример вывода: `15`.
+
+### TOTAL / LIKES / DISLIKES одной строкой
+
+MODX:
+
+```
+[[!ReactionsCount?
+    &format=`Всего {TOTAL}: 👍 {LIKES} / 👎 {DISLIKES}`
+]]
+```
+
+Fenom:
+
+```
+{'!ReactionsCount' | snippet : [
+    'format' => 'Всего {TOTAL}: 👍 {LIKES} / 👎 {DISLIKES}',
+]}
+```
+
+### Рейтинг и проценты
+
+MODX:
+
+```
+[[!ReactionsCount?
+    &format=`Рейтинг {RATING} · ↑{PCT_UP}% · ↓{PCT_DOWN}%`
+]]
+```
+
+Fenom:
+
+```
+{'!ReactionsCount' | snippet : [
+    'format' => 'Рейтинг {RATING} · ↑{PCT_UP}% · ↓{PCT_DOWN}%',
+]}
+```
+
+### Один тип через `&type=`
+
+MODX:
+
+```
+[[!ReactionsCount?
+    &type=`like`
+    &format=`Лайков: {like}`
+]]
+```
+
+Fenom:
+
+```
+{'!ReactionsCount' | snippet : [
+    'type'   => 'like',
+    'format' => 'Лайков: {like}',
+]}
+```
+
+### Несколько именованных типов в `format`
+
+Имена без отдельного `&type=`:
+
+MODX:
+
+```
+[[!ReactionsCount?
+    &format=`❤️ {love} · 🔥 {fire} · ⭐ {star} · 🚀 {rocket}`
+]]
+```
+
+Fenom:
+
+```
+{'!ReactionsCount' | snippet : [
+    'format' => '❤️ {love} · 🔥 {fire} · ⭐ {star} · 🚀 {rocket}',
+]}
+```
+
+Нулевые и отсутствующие типы печатаются как `0`.
 
 ### Только лайки
 
@@ -57,40 +138,55 @@ Fenom:
 {'!ReactionsCount' | snippet : ['format' => '{LIKES}']}
 ```
 
-### Рейтинг с процентами
+### Товар miniShop3
 
 MODX:
 
 ```
-[[!ReactionsCount? &format=`👍 {LIKES} ({PCT_UP}%) · 👎 {DISLIKES} ({PCT_DOWN}%)`]]
+[[!ReactionsCount?
+    &class=`msProduct`
+    &object=`[[*id]]`
+    &format=`Товар: 👍 {LIKES} · всего {TOTAL}`
+]]
 ```
 
 Fenom:
 
 ```
 {'!ReactionsCount' | snippet : [
-    'format' => '👍 {LIKES} ({PCT_UP}%) · 👎 {DISLIKES} ({PCT_DOWN}%)',
+    'class'  => 'msProduct',
+    'object' => $product.id,
+    'format' => 'Товар: 👍 {LIKES} · всего {TOTAL}',
 ]}
 ```
 
-### Один тип реакции
+### В плейсхолдер (pdoResources / карточка)
 
 MODX:
 
 ```
-[[!ReactionsCount? &type=`love` &format=`❤️ {love}`]]
+[[!ReactionsCount?
+    &object=`[[+id]]`
+    &format=`Всего {TOTAL}: 👍 {LIKES} / 👎 {DISLIKES}`
+    &toPlaceholder=`rx.count`
+]]
+[[+rx.count]]
 ```
 
 Fenom:
 
 ```
 {'!ReactionsCount' | snippet : [
-    'type'   => 'love',
-    'format' => '❤️ {love}',
+    'object' => $id,
+    'format' => 'Всего {TOTAL}: 👍 {LIKES} / 👎 {DISLIKES}',
+    'toPlaceholder' => 'rx.count',
 ]}
+{$_modx->getPlaceholder('rx.count')}
 ```
 
-### Счётчик комментария Tickets
+### Комментарий Tickets
+
+На MODX 3 не проверено. Вызов:
 
 MODX:
 
@@ -110,50 +206,4 @@ Fenom:
     'object' => $comment.id,
     'format' => '{LIKES}',
 ]}
-```
-
-### На товаре miniShop3
-
-MODX:
-
-```
-[[!ReactionsCount?
-    &class=`msProduct`
-    &object=`[[*id]]`
-    &format=`{TOTAL} реакций`
-]]
-```
-
-Fenom:
-
-```
-{'!ReactionsCount' | snippet : [
-    'class'  => 'msProduct',
-    'object' => $_modx->resource.id,
-    'format' => '{TOTAL} реакций',
-]}
-```
-
-### В плейсхолдер (карточка / pdoResources)
-
-MODX:
-
-```
-[[!ReactionsCount?
-    &object=`[[+id]]`
-    &format=`{RATING}`
-    &toPlaceholder=`rating`
-]]
-[[+rating]]
-```
-
-Fenom:
-
-```
-{'!ReactionsCount' | snippet : [
-    'object' => $id,
-    'format' => '{RATING}',
-    'toPlaceholder' => 'rating',
-]}
-{$_modx->getPlaceholder('rating')}
 ```

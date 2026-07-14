@@ -6,7 +6,9 @@ use Reactions\Dto\VisitorIdentity;
 use Reactions\Enum\Period;
 use Reactions\Model\Reaction;
 use Reactions\Model\ReactionAggregate;
+use Reactions\Model\ReactionType;
 use Reactions\Reactions;
+use Reactions\Support\Counts;
 
 class AggregateService
 {
@@ -46,15 +48,29 @@ class AggregateService
         $cacheKey = 'counts/' . $classKey . '/' . $objectId . '/' . $context;
         $cached = $this->cache()->get($cacheKey);
         if (is_array($cached)) {
-            return $cached;
+            $normalized = Counts::normalize($cached);
+            // Only trust cache when it is already a clean int map.
+            if ($normalized === $cached) {
+                return $normalized;
+            }
+            // Junk strings / wrong shapes → drop and reload from DB.
+            $this->cache()->delete($cacheKey);
+        } elseif (is_string($cached) && $cached !== '') {
+            $normalized = Counts::normalize($cached);
+            if ($normalized !== []) {
+                $this->cache()->set($cacheKey, $normalized, 300);
+
+                return $normalized;
+            }
+            $this->cache()->delete($cacheKey);
         }
 
         $aggregate = $this->reactions->modx->getObject(ReactionAggregate::class, [
-            'class_key' => $classKey,
+            'object_class' => $classKey,
             'object_id' => $objectId,
             'context' => $context,
         ]);
-        $counts = $aggregate ? (array) $aggregate->get('counts') : [];
+        $counts = Counts::normalize($aggregate ? $aggregate->get('counts') : []);
         $this->cache()->set($cacheKey, $counts, 300);
 
         return $counts;
@@ -70,7 +86,7 @@ class AggregateService
         // Per-visitor state is not cached: it changes on every react and keyed by fingerprint.
         $names = [];
         foreach ($this->reactionsFor($classKey, $objectId, $context, $identity->fingerprint) as $reaction) {
-            $type = $reaction->getOne('Type');
+            $type = $this->loadType((int) $reaction->get('type_id'));
             if ($type) {
                 $names[] = (string) $type->get('name');
             }
@@ -91,7 +107,7 @@ class AggregateService
         $sortField = in_array($sortField, $allowed, true) ? $sortField : 'likes';
 
         if ($period === Period::All) {
-            $criteria = ['class_key' => $classKey];
+            $criteria = ['object_class' => $classKey];
             if ($context !== '') {
                 $criteria['context'] = $context;
             }
@@ -117,7 +133,7 @@ class AggregateService
     private function loadOrCreate(string $classKey, int $objectId, string $context): ReactionAggregate
     {
         $aggregate = $this->reactions->modx->getObject(ReactionAggregate::class, [
-            'class_key' => $classKey,
+            'object_class' => $classKey,
             'object_id' => $objectId,
             'context' => $context,
         ]);
@@ -128,7 +144,7 @@ class AggregateService
 
         $aggregate = $this->reactions->modx->newObject(ReactionAggregate::class);
         $aggregate->fromArray([
-            'class_key' => $classKey,
+            'object_class' => $classKey,
             'object_id' => $objectId,
             'context' => $context,
             'counts' => [],
@@ -148,7 +164,7 @@ class AggregateService
     {
         $counts = [];
         foreach ($this->reactionsFor($classKey, $objectId, $context) as $reaction) {
-            $type = $reaction->getOne('Type');
+            $type = $this->loadType((int) $reaction->get('type_id'));
             if (!$type) {
                 continue;
             }
@@ -167,7 +183,7 @@ class AggregateService
         ?string $fingerprint = null,
     ): array {
         $criteria = [
-            'class_key' => $classKey,
+            'object_class' => $classKey,
             'object_id' => $objectId,
             'context' => $context,
         ];
@@ -182,7 +198,7 @@ class AggregateService
     {
         $rows = $this->reactions->modx->getCollection(
             Reaction::class,
-            ['class_key' => $classKey, 'object_id' => $objectId, 'context' => $context],
+            ['object_class' => $classKey, 'object_id' => $objectId, 'context' => $context],
             false,
             true,
             ['created_at' => 'DESC'],
@@ -203,7 +219,7 @@ class AggregateService
             'likes' => $likes,
             'dislikes' => $dislikes,
             'rating' => $likes - $dislikes,
-            'total' => array_sum($counts),
+            'total' => Counts::total($counts),
         ];
     }
 
@@ -227,7 +243,7 @@ class AggregateService
         string $context,
     ): array {
         $criteria = [
-            'class_key' => $classKey,
+            'object_class' => $classKey,
             'created_at:>=' => time() - (int) $period->seconds(),
         ];
         if ($context !== '') {
@@ -236,7 +252,7 @@ class AggregateService
 
         $buckets = [];
         foreach ($this->reactions->modx->getCollection(Reaction::class, $criteria) as $reaction) {
-            $type = $reaction->getOne('Type');
+            $type = $this->loadType((int) $reaction->get('type_id'));
             if (!$type) {
                 continue;
             }
@@ -256,7 +272,7 @@ class AggregateService
             $metrics = $this->metrics($bucket['counts']);
             $aggregate = $this->reactions->modx->newObject(ReactionAggregate::class);
             $aggregate->fromArray([
-                'class_key' => $classKey,
+                'object_class' => $classKey,
                 'object_id' => $bucket['object_id'],
                 'context' => $bucket['context'],
                 'counts' => $bucket['counts'],
@@ -274,6 +290,23 @@ class AggregateService
             ((float) $b->get($sortField)) <=> ((float) $a->get($sortField)));
 
         return array_slice($aggregates, 0, max(0, $limit));
+    }
+
+    /** @return array<string, int> */
+    public function decodeCounts(mixed $counts): array
+    {
+        return Counts::normalize($counts);
+    }
+
+    private function loadType(int $typeId): ?ReactionType
+    {
+        if ($typeId <= 0) {
+            return null;
+        }
+
+        $type = $this->reactions->modx->getObject(ReactionType::class, $typeId);
+
+        return $type instanceof ReactionType ? $type : null;
     }
 
     private function cache(): CacheService

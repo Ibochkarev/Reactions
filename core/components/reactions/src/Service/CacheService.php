@@ -15,17 +15,24 @@ class CacheService
 
     public function get(string $key, mixed $default = null): mixed
     {
-        $cache = $this->reactions->modx->getCacheManager();
+        $cached = $this->reactions->modx->getCacheManager()->get($this->prefixed($key));
+        if ($cached === false || $cached === null) {
+            return $default;
+        }
 
-        return $cache->get($this->prefixed($key), $default);
+        return $cached;
     }
 
     public function set(string $key, mixed $value, int $ttl = 0): bool
     {
-        $cache = $this->reactions->modx->getCacheManager();
-        $options = $ttl > 0 ? ['expires' => $ttl] : [];
+        // xPDOCacheManager::set($key, &$var, $lifetime = 0, $options = [])
+        $lifetime = max(0, $ttl);
 
-        return (bool) $cache->set($this->prefixed($key), $value, $options);
+        return (bool) $this->reactions->modx->getCacheManager()->set(
+            $this->prefixed($key),
+            $value,
+            $lifetime
+        );
     }
 
     public function delete(string $key): bool

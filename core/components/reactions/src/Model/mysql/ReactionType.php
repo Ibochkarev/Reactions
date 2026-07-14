@@ -1,29 +1,31 @@
 <?php
-
 namespace Reactions\Model\mysql;
+
+use xPDO\xPDO;
 
 class ReactionType extends \Reactions\Model\ReactionType
 {
+
     public static $metaMap = array (
         'package' => 'Reactions\\Model',
         'version' => '3.0',
         'table' => 'reactions_types',
         'extends' => 'xPDO\\Om\\xPDOSimpleObject',
-        'tableMeta' =>
+        'tableMeta' => 
         array (
             'engine' => 'InnoDB',
         ),
-        'fields' =>
+        'fields' => 
         array (
             'name' => '',
             'emoji' => '',
-            'icon' => null,
+            'icon' => '',
             'ordering' => 0,
             'active' => 1,
         ),
-        'fieldMeta' =>
+        'fieldMeta' => 
         array (
-            'name' =>
+            'name' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '64',
@@ -31,7 +33,7 @@ class ReactionType extends \Reactions\Model\ReactionType
                 'null' => false,
                 'default' => '',
             ),
-            'emoji' =>
+            'emoji' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '16',
@@ -39,7 +41,7 @@ class ReactionType extends \Reactions\Model\ReactionType
                 'null' => false,
                 'default' => '',
             ),
-            'icon' =>
+            'icon' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '255',
@@ -47,7 +49,7 @@ class ReactionType extends \Reactions\Model\ReactionType
                 'null' => true,
                 'default' => '',
             ),
-            'ordering' =>
+            'ordering' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -56,7 +58,7 @@ class ReactionType extends \Reactions\Model\ReactionType
                 'null' => false,
                 'default' => 0,
             ),
-            'active' =>
+            'active' => 
             array (
                 'dbtype' => 'tinyint',
                 'precision' => '1',
@@ -66,17 +68,17 @@ class ReactionType extends \Reactions\Model\ReactionType
                 'default' => 1,
             ),
         ),
-        'indexes' =>
+        'indexes' => 
         array (
-            'name' =>
+            'name' => 
             array (
                 'alias' => 'name',
                 'primary' => false,
                 'unique' => true,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'name' =>
+                    'name' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -84,21 +86,21 @@ class ReactionType extends \Reactions\Model\ReactionType
                     ),
                 ),
             ),
-            'active_ordering' =>
+            'active_ordering' => 
             array (
                 'alias' => 'active_ordering',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'active' =>
+                    'active' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'ordering' =>
+                    'ordering' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -108,4 +110,5 @@ class ReactionType extends \Reactions\Model\ReactionType
             ),
         ),
     );
+
 }

@@ -18,14 +18,40 @@ class Security
 
     public function ensureSession(): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return;
         }
+
+        // CLI / already-sent headers: keep an in-memory bag (no Set-Cookie).
+        // In HTTP requests api.php must not send headers before initialize().
+        if (PHP_SAPI === 'cli') {
+            $_SESSION ??= [];
+
+            return;
+        }
+
+        if (headers_sent($file, $line)) {
+            $this->modx->log(
+                modX::LOG_LEVEL_ERROR,
+                '[Reactions] Cannot start session; headers already sent at ' . $file . ':' . $line
+            );
+            $_SESSION ??= [];
+
+            return;
+        }
+
+        session_start();
     }
 
     public function createToken(): string
     {
         $this->ensureSession();
+        $existing = $_SESSION[self::CSRF_SESSION_KEY] ?? '';
+        // Multiple SSR widgets call createToken(); keep one token per session.
+        if (is_string($existing) && preg_match('/^[a-f0-9]{64}$/', $existing) === 1) {
+            return $existing;
+        }
+
         $token = bin2hex(random_bytes(32));
         $_SESSION[self::CSRF_SESSION_KEY] = $token;
 

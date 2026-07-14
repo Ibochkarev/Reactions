@@ -15,7 +15,7 @@ return [
     'release' => 'pl',
     'install' => false,
     'update' => [
-        'chunks' => false,
+        'chunks' => true,
         'menus' => false,
         'permission' => true,
         'plugins' => true,

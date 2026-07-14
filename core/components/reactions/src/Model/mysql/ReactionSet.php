@@ -1,28 +1,30 @@
 <?php
-
 namespace Reactions\Model\mysql;
+
+use xPDO\xPDO;
 
 class ReactionSet extends \Reactions\Model\ReactionSet
 {
+
     public static $metaMap = array (
         'package' => 'Reactions\\Model',
         'version' => '3.0',
         'table' => 'reactions_sets',
         'extends' => 'xPDO\\Om\\xPDOSimpleObject',
-        'tableMeta' =>
+        'tableMeta' => 
         array (
             'engine' => 'InnoDB',
         ),
-        'fields' =>
+        'fields' => 
         array (
             'key' => '',
             'title' => '',
             'exclusive' => 1,
             'active' => 1,
         ),
-        'fieldMeta' =>
+        'fieldMeta' => 
         array (
-            'key' =>
+            'key' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '64',
@@ -30,7 +32,7 @@ class ReactionSet extends \Reactions\Model\ReactionSet
                 'null' => false,
                 'default' => '',
             ),
-            'title' =>
+            'title' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '255',
@@ -38,7 +40,7 @@ class ReactionSet extends \Reactions\Model\ReactionSet
                 'null' => false,
                 'default' => '',
             ),
-            'exclusive' =>
+            'exclusive' => 
             array (
                 'dbtype' => 'tinyint',
                 'precision' => '1',
@@ -47,7 +49,7 @@ class ReactionSet extends \Reactions\Model\ReactionSet
                 'null' => false,
                 'default' => 1,
             ),
-            'active' =>
+            'active' => 
             array (
                 'dbtype' => 'tinyint',
                 'precision' => '1',
@@ -57,17 +59,17 @@ class ReactionSet extends \Reactions\Model\ReactionSet
                 'default' => 1,
             ),
         ),
-        'indexes' =>
+        'indexes' => 
         array (
-            'key' =>
+            'key' => 
             array (
                 'alias' => 'key',
                 'primary' => false,
                 'unique' => true,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'key' =>
+                    'key' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -76,11 +78,11 @@ class ReactionSet extends \Reactions\Model\ReactionSet
                 ),
             ),
         ),
-        'composites' =>
+        'composites' => 
         array (
-            'SetTypes' =>
+            'SetTypes' => 
             array (
-                'class' => 'ReactionSetType',
+                'class' => 'Reactions\\Model\\ReactionSetType',
                 'local' => 'id',
                 'foreign' => 'set_id',
                 'cardinality' => 'many',
@@ -88,4 +90,5 @@ class ReactionSet extends \Reactions\Model\ReactionSet
             ),
         ),
     );
+
 }

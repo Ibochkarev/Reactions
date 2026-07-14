@@ -20,7 +20,7 @@ class LatestController extends AbstractController
 
         $criteria = [];
         if ($classKey !== '') {
-            $criteria['class_key'] = $classKey;
+            $criteria['object_class'] = $classKey;
         }
         if ($context !== '') {
             $criteria['context'] = $context;
@@ -40,7 +40,7 @@ class LatestController extends AbstractController
             'data' => [
                 'items' => array_map(static fn (Reaction $reaction): array => [
                     'id' => (int) $reaction->get('id'),
-                    'class_key' => $reaction->get('class_key'),
+                    'class_key' => $reaction->get('object_class'),
                     'object_id' => (int) $reaction->get('object_id'),
                     'context' => $reaction->get('context'),
                     'type' => $reaction->get('type_name') ?? '',

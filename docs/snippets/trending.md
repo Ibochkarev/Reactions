@@ -30,75 +30,110 @@ trending_score = sign × order + age
 | --- | --- |
 | `[[+idx]]` | Порядковый номер |
 | `[[+object_id]]` | ID объекта |
-| `[[+class_key]]` | `class_key` объекта |
+| `[[+class_key]]` | Класс объекта (в БД: `object_class`) |
+| `[[+pagetitle]]` | Заголовок ресурса / name товара |
+| `[[+uri]]` | URL объекта (или пусто) |
 | `[[+likes]]` | Количество лайков |
+| `[[+dislikes]]` | Количество дизлайков |
 | `[[+total]]` | Сумма всех реакций |
 | `[[+rating]]` | Рейтинг (likes − dislikes) |
 | `[[+trending_score]]` | Оценка trending (для отладки и сортировки) |
 
 ## Примеры
 
-### Горячие материалы на главной
+Параметр `period` для сортировки trending не режет окно: скор уже лежит в агрегатах (`period=all`). Укажите `period` только если так удобнее рядом с `TopLiked` / `TopRated` в одном шаблоне.
+
+### Ресурсы на главной
 
 MODX:
 
 ```
-[[!Trending? &limit=`8`]]
+<ul class="reactions-top">
+[[!Trending?
+    &class=`modResource`
+    &period=`all`
+    &limit=`5`
+]]
+</ul>
 ```
 
 Fenom:
 
 ```
-{'!Trending' | snippet : ['limit' => 8]}
+<ul class="reactions-top">
+{'!Trending' | snippet : [
+    'class'  => 'modResource',
+    'period' => 'all',
+    'limit'  => 5,
+]}
+</ul>
 ```
 
-### Трендовые товары
+### Короткий блок (limit=3)
+
+MODX:
+
+```
+[[!Trending? &period=`all` &limit=`3`]]
+```
+
+Fenom:
+
+```
+{'!Trending' | snippet : ['period' => 'all', 'limit' => 3]}
+```
+
+### Товары miniShop3
+
+MODX:
+
+```
+<ul class="reactions-top">
+[[!Trending?
+    &class=`msProduct`
+    &limit=`6`
+]]
+</ul>
+```
+
+Fenom:
+
+```
+<ul class="reactions-top">
+{'!Trending' | snippet : [
+    'class' => 'msProduct',
+    'limit' => 6,
+]}
+</ul>
+```
+
+### В плейсхолдер
 
 MODX:
 
 ```
 [[!Trending?
-    &class=`msProduct`
-    &limit=`6`
-    &tpl=`tpl.trending.product`
+    &limit=`3`
+    &toPlaceholder=`rx.trend`
 ]]
+<ul class="reactions-top">[[+rx.trend]]</ul>
 ```
 
 Fenom:
 
 ```
 {'!Trending' | snippet : [
-    'class' => 'msProduct',
-    'limit' => 6,
-    'tpl'   => 'tpl.trending.product',
+    'limit' => 3,
+    'toPlaceholder' => 'rx.trend',
 ]}
+<ul class="reactions-top">{$_modx->getPlaceholder('rx.trend')}</ul>
 ```
 
-### Блок в плейсхолдер
+### Свой чанк
 
 MODX:
 
 ```
-[[!Trending? &limit=`5` &toPlaceholder=`trendingNow`]]
-<div class="trending">[[+trendingNow]]</div>
-```
-
-Fenom:
-
-```
-{'!Trending' | snippet : [
-    'limit' => 5,
-    'toPlaceholder' => 'trendingNow',
-]}
-<div class="trending">{$_modx->getPlaceholder('trendingNow')}</div>
-```
-
-### Лента «Сейчас обсуждают»
-
-MODX:
-
-```
-<h2>Сейчас обсуждают</h2>
 <ul class="trending-list">
 [[!Trending? &limit=`10` &tpl=`tpl.trending.row`]]
 </ul>
@@ -107,7 +142,6 @@ MODX:
 Fenom:
 
 ```
-<h2>Сейчас обсуждают</h2>
 <ul class="trending-list">
 {'!Trending' | snippet : [
     'limit' => 10,
@@ -116,44 +150,18 @@ Fenom:
 </ul>
 ```
 
-### Трендовые комментарии
-
-MODX:
+### Контекст `web`
 
 ```
-[[!Trending?
-    &class=`TicketComment`
-    &limit=`5`
-]]
+[[!Trending? &context=`web` &limit=`12`]]
 ```
 
-Fenom:
+### Комментарии Tickets
+
+На MODX 3 не проверено:
 
 ```
-{'!Trending' | snippet : [
-    'class' => 'TicketComment',
-    'limit' => 5,
-]}
-```
-
-### Только контекст `web`
-
-MODX:
-
-```
-[[!Trending?
-    &context=`web`
-    &limit=`12`
-]]
-```
-
-Fenom:
-
-```
-{'!Trending' | snippet : [
-    'context' => 'web',
-    'limit'   => 12,
-]}
+[[!Trending? &class=`TicketComment` &limit=`5`]]
 ```
 
 ## Обновление trending_score

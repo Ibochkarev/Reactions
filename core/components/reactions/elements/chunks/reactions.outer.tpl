@@ -7,6 +7,8 @@
     data-set="[[+set]]"
     data-context="[[+context]]"
     data-types="[[+types]]"
+    data-exclusive="[[+exclusive]]"
+    data-allow-multiple="[[+allow_multiple]]"
 >
     <div class="reactions-widget__buttons" role="group" aria-label="Reactions">
         [[+output]]

@@ -1,8 +1,12 @@
 # Интеграция с miniShop3
 
-Реакции на товары miniShop3: `class_key` = `msProduct`, `object` = ID товара.
+В сниппетах и API передавайте короткий класс `msProduct` и ID товара (`&object=` / `object_id`). Сервер находит товар через FQCN (`MiniShop3\Model\msProduct`) и STI `modResource`, короткое имя в xPDO не дергает — без шума в error.log.
+
+В агрегатах поле `object_class` хранится как `msProduct` (то, что вы передали в `class` / `class_key`). Join в каталоге стройте по этой же строке.
 
 ## Блок реакций на карточке товара
+
+`github` (8 типов):
 
 MODX:
 
@@ -11,6 +15,7 @@ MODX:
     &class=`msProduct`
     &object=`[[*id]]`
     &set=`github`
+    &context=`web`
 ]]
 ```
 
@@ -18,10 +23,21 @@ Fenom (шаблон товара):
 
 ```
 {'!Reactions' | snippet : [
-    'class'  => 'msProduct',
-    'object' => $product.id,
-    'set'    => 'github',
+    'class'   => 'msProduct',
+    'object'  => $product.id,
+    'set'     => 'github',
+    'context' => 'web',
 ]}
+```
+
+Только 👍/👎:
+
+```
+[[!Reactions?
+    &class=`msProduct`
+    &object=`[[*id]]`
+    &set=`updown`
+]]
 ```
 
 ## Счётчик в каталоге
@@ -56,7 +72,7 @@ MODX:
 [[!msProducts?
     &parents=`10`
     &limit=`12`
-    &leftJoin=`{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.class_key = 'msProduct'"}}`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = 'msProduct'"}}`
     &sortby=`Aggregate.likes`
     &sortdir=`DESC`
     &tpl=`tpl.msProduct.card`
@@ -69,7 +85,7 @@ Fenom:
 {'!msProducts' | snippet : [
     'parents' => 10,
     'limit' => 12,
-    'leftJoin' => '{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.class_key = \'msProduct\'"}}',
+    'leftJoin' => '{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = \'msProduct\'"}}',
     'sortby' => 'Aggregate.likes',
     'sortdir' => 'DESC',
     'tpl' => 'tpl.msProduct.card',
@@ -176,6 +192,30 @@ Fenom:
     'context' => 'catalog',
     'set'     => 'updown',
 ]}
+```
+
+## JSON-LD на карточке товара
+
+Только при наличии like/dislike у товара. В Fenom — через `{raw …}`:
+
+MODX:
+
+```
+[[!ReactionsSchema?
+    &class=`msProduct`
+    &object=`[[*id]]`
+    &context=`web`
+]]
+```
+
+Fenom:
+
+```
+{raw ('!ReactionsSchema' | snippet : [
+    'class'   => 'msProduct',
+    'object'  => $product.id,
+    'context' => 'web',
+])}
 ```
 
 ## Пересчёт агрегатов

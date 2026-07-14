@@ -45,10 +45,10 @@ use Reactions\Reactions;
 define('MODX_API_MODE', true);
 
 $componentPath = __DIR__ . '/';
-$modxRoot = dirname(__DIR__, 3);
+$modxRoot = resolveReactionsModxRoot($argv[0] ?? '');
 
-if (!is_file($modxRoot . '/index.php')) {
-    fwrite(STDERR, "MODX index.php not found at {$modxRoot}/index.php\n");
+if ($modxRoot === null) {
+    fwrite(STDERR, "MODX index.php not found. Run from the site root, e.g.:\n  php core/components/reactions/cli.php <command>\n");
     exit(1);
 }
 
@@ -153,6 +153,77 @@ function parseOptionToken(string $token): array
     }
 
     return [$name => $value];
+}
+
+/**
+ * Resolve MODX root when the component path is a symlink into Extras/.
+ * Prefer the invocation path (`$argv[0]` + cwd), then walk parents of cwd / __DIR__.
+ */
+function resolveReactionsModxRoot(string $argv0): ?string
+{
+    $candidates = [];
+
+    if ($argv0 !== '') {
+        $invoked = $argv0;
+        if (!str_starts_with($invoked, DIRECTORY_SEPARATOR)) {
+            $invoked = getcwd() . DIRECTORY_SEPARATOR . $invoked;
+        }
+        $candidates[] = dirname(normalizeCliPath($invoked), 4);
+    }
+
+    $candidates[] = getcwd();
+    $candidates[] = dirname(__DIR__, 3);
+    $candidates[] = dirname(__DIR__, 4);
+
+    $dir = getcwd();
+    for ($i = 0; $i < 8; ++$i) {
+        $candidates[] = $dir;
+        $parent = dirname($dir);
+        if ($parent === $dir) {
+            break;
+        }
+        $dir = $parent;
+    }
+
+    foreach ($candidates as $root) {
+        if (!is_string($root) || $root === '') {
+            continue;
+        }
+        $root = rtrim(normalizeCliPath($root), DIRECTORY_SEPARATOR);
+        if (is_file($root . '/index.php') && is_file($root . '/core/config/config.inc.php')) {
+            return $root;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Collapse `.` / `..` segments without resolving symlinks.
+ */
+function normalizeCliPath(string $path): string
+{
+    $path = str_replace('\\', '/', $path);
+    $parts = [];
+    foreach (explode('/', $path) as $i => $segment) {
+        if ($segment === '' && $i > 0) {
+            continue;
+        }
+        if ($segment === '.') {
+            continue;
+        }
+        if ($segment === '..') {
+            if ($parts !== [] && end($parts) !== '..' && end($parts) !== '') {
+                array_pop($parts);
+                continue;
+            }
+        }
+        $parts[] = $segment;
+    }
+
+    $normalized = implode('/', $parts);
+
+    return $normalized === '' ? '/' : $normalized;
 }
 
 /**

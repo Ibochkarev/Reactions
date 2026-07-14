@@ -3,6 +3,7 @@
 namespace Reactions\Snippet;
 
 use Reactions\Api\Security;
+use Reactions\Model\ReactionSet;
 use Reactions\Support\TypeFilter;
 
 class ReactionsSnippet extends AbstractSnippet
@@ -47,6 +48,10 @@ class ReactionsSnippet extends AbstractSnippet
             ]);
         }
 
+        $set = $this->modx->getObject(ReactionSet::class, ['key' => $setKey, 'active' => true]);
+        $setExclusive = $set ? (bool) $set->get('exclusive') : ($setKey === 'updown');
+        $allowMultiple = (bool) $reactions->getOption('allowMultiple', false);
+
         $output = $this->modx->getChunk($tplOuter, [
             'output' => $buttons,
             'total' => $metrics['total'],
@@ -57,6 +62,8 @@ class ReactionsSnippet extends AbstractSnippet
             'set' => $setKey,
             'context' => $context,
             'types' => implode(',', TypeFilter::namesFromTypes($setTypes)),
+            'exclusive' => $setExclusive ? '1' : '0',
+            'allow_multiple' => $allowMultiple ? '1' : '0',
         ]);
 
         return $this->finish($output, $scriptProperties);

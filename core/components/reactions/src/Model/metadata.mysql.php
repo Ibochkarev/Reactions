@@ -1,12 +1,11 @@
 <?php
-
 $xpdo_meta_map = array (
     'version' => '3.0',
     'namespace' => 'Reactions\\Model',
     'namespacePrefix' => 'Reactions',
-    'class_map' =>
+    'class_map' => 
     array (
-        'xPDO\\Om\\xPDOSimpleObject' =>
+        'xPDO\\Om\\xPDOSimpleObject' => 
         array (
             0 => 'Reactions\\Model\\ReactionType',
             1 => 'Reactions\\Model\\ReactionSet',

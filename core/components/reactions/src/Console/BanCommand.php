@@ -68,20 +68,29 @@ class BanCommand extends AbstractCommand
             return 1;
         }
 
-        if ($ban === null || !$ban->remove()) {
+        if ($ban === null) {
             $this->writelnError('Ban not found.');
 
             return 1;
         }
 
-        $this->writeln('Removed ban #' . ($id > 0 ? $id : (int) $ban->get('id')));
+        $banId = (int) $ban->get('id');
+        if (!$ban->remove()) {
+            $this->writelnError('Failed to remove ban.');
+
+            return 1;
+        }
+
+        $this->writeln("Removed ban #{$banId}");
 
         return 0;
     }
 
     private function list(): int
     {
-        $bans = $this->modx->getCollection(ReactionBan::class, [], false, true, ['created_at' => 'DESC']);
+        $query = $this->modx->newQuery(ReactionBan::class);
+        $query->sortby('created_at', 'DESC');
+        $bans = $this->modx->getCollection(ReactionBan::class, $query);
         if ($bans === []) {
             $this->writeln('No bans.');
 

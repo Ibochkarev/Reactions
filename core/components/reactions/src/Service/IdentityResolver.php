@@ -13,6 +13,9 @@ class IdentityResolver
 {
     private const COOKIE_NAME = 'reactions_fid';
 
+    /** Stable guest fingerprint for the current PHP request (setcookie does not populate $_COOKIE). */
+    private ?string $requestFid = null;
+
     public function __construct(
         private readonly Reactions $reactions,
     ) {
@@ -66,8 +69,8 @@ class IdentityResolver
 
     private function resolveIp(modX $modx): string
     {
-        $request = $modx->getRequest();
-        if ($request && method_exists($request, 'getClientIp')) {
+        $request = $modx->request ?? null;
+        if (is_object($request) && method_exists($request, 'getClientIp')) {
             $ip = $request->getClientIp();
             if (is_array($ip)) {
                 return (string) ($ip['ip'] ?? '');
@@ -94,8 +97,11 @@ class IdentityResolver
     {
         $fid = $this->readSignedFingerprint();
         if ($fid === null) {
-            $fid = bin2hex(random_bytes(16));
-            $this->setFingerprintCookie($fid);
+            if ($this->requestFid === null) {
+                $this->requestFid = bin2hex(random_bytes(16));
+                $this->setFingerprintCookie($this->requestFid);
+            }
+            $fid = $this->requestFid;
         }
 
         return new VisitorIdentity('f:' . $fid, null, $ipHash);
@@ -123,7 +129,12 @@ class IdentityResolver
 
     private function setFingerprintCookie(string $fid): void
     {
+        if (PHP_SAPI === 'cli' || headers_sent()) {
+            return;
+        }
+
         $value = $fid . '.' . $this->sign($fid);
+        $_COOKIE[self::COOKIE_NAME] = $value;
         setcookie(self::COOKIE_NAME, $value, [
             'expires' => time() + 31536000,
             'path' => '/',

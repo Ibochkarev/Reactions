@@ -21,7 +21,18 @@ composer install
 php _build/build.php
 ```
 
+`build.php` собирает виджет из `frontend/` (нужны Node.js и `npm`). Артефакты: `assets/components/reactions/js/web/reactions.js` и `.css`.
+
 После установки пакет создаёт таблицы, пресеты типов и наборов (`updown`, `github`, `full`), сниппеты, чанки и системные настройки.
+
+### Локальная разработка (Extras)
+
+Исходники держите в `Extras/Reactions/`. При установке пакета из этой папки resolver ставит симлинки **сайта на Extra**:
+
+- `core/components/reactions` → `Extras/Reactions/core/components/reactions`
+- `assets/components/reactions` → `Extras/Reactions/assets/components/reactions`
+
+Правки в Extra сразу видны на сайте и в git. Не коммитьте обратные симлинки Extra → сайт: git покажет массовые удаления исходников.
 
 ## Быстрый старт
 
@@ -86,13 +97,23 @@ curl "https://example.com/assets/components/reactions/api.php?action=counts&clas
 | `Trending` | Горячие материалы по формуле Reddit | [snippets/trending.md](snippets/trending.md) |
 | `ReactionsSchema` | JSON-LD `AggregateRating` для SEO | [integrations/seo.md](integrations/seo.md) |
 
+### Какие кейсы смотреть в примерах
+
+| Кейс | Где |
+| --- | --- |
+| `updown` / `github` / `full`, `&types=`, отсев чужих имён | [Reactions](snippets/reactions.md#примеры) |
+| `{TOTAL}` / `{LIKES}` / `{RATING}` / `{love}` → `0` | [ReactionsCount](snippets/reactions-count.md#примеры) |
+| Периоды `day`…`all`, `msProduct`, `toPlaceholder` | [TopLiked](snippets/top-liked.md#примеры), [TopRated](snippets/top-rated.md#примеры), [Trending](snippets/trending.md#примеры) |
+| JSON-LD при like/dislike и пустой output без голосов | [ReactionsSchema](integrations/seo.md#примеры) |
+| Товар miniShop3 (виджет + count + schema) | [minishop3.md](integrations/minishop3.md), сниппеты выше |
+
 ## Интеграции
 
 | Компонент | Документация |
 | --- | --- |
 | pdoTools | [integrations/pdotools.md](integrations/pdotools.md) |
 | miniShop3 | [integrations/minishop3.md](integrations/minishop3.md) |
-| Tickets | [integrations/tickets.md](integrations/tickets.md) |
+| Tickets | [integrations/tickets.md](integrations/tickets.md) (MODX 3: не проверено) |
 | Collections | [integrations/collections.md](integrations/collections.md) |
 | SEO / Schema.org | [integrations/seo.md](integrations/seo.md) |
 

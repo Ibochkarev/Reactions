@@ -1,12 +1,13 @@
 # CLI
 
-Запуск из корня сайта MODX:
+Запускайте из корня сайта MODX (там, где лежат `index.php` и `core/config/`):
 
 ```bash
+cd /var/www/site
 php core/components/reactions/cli.php <команда> [подкоманда] [опции]
 ```
 
-CLI инициализирует контекст `mgr`.
+CLI поднимает контекст `mgr`. Корень сайта ищется по пути вызова (`$argv[0]` + cwd), поэтому работает и через симлинк `core/components/reactions` → `Extras/Reactions/...`.
 
 ## Обзор команд
 
@@ -38,7 +39,7 @@ php core/components/reactions/cli.php recount --class-key=modResource --object-i
 
 | Опция | Описание |
 | --- | --- |
-| `--class-key` | `class_key` объекта |
+| `--class-key` | Класс объекта как в API (`modResource`, `msProduct`…). В БД это поле `object_class` |
 | `--object-id` | ID объекта |
 | `--context` | Контекст, по умолчанию `web` |
 
@@ -171,9 +172,9 @@ php core/components/reactions/cli.php set attach --key=github --types=like,disli
 | --- | --- |
 | `--key` или `--id` | Набор |
 | `--types` | Типы через запятую (обязательно) |
-| `--replace` | Заменить все привязки (по умолчанию — замена) |
+| `--replace` | Снести старые связи набора и записать только `--types` |
 
-Без `--replace` новые типы добавляются к существующим.
+Без `--replace` типы из `--types` добавляются к уже привязанным. Чтобы оставить только перечисленные типы: `--replace`.
 
 ### set remove
 
@@ -238,12 +239,19 @@ php core/components/reactions/cli.php stats --limit=20
 
 ## Примеры сценариев
 
-### Добавить кастомный набор «Бар»
+### Набор «Бар» из уже существующих типов
+
+Типы `beer` и `fire` входят в пресет `full`. Достаточно создать набор:
 
 ```bash
-php core/components/reactions/cli.php type create --name=beer --emoji=🍺
-php core/components/reactions/cli.php type create --name=fire --emoji=🔥
 php core/components/reactions/cli.php set create --key=bar --title="Bar" --types=beer,fire --non-exclusive
+```
+
+Свой тип (имя должно быть уникальным):
+
+```bash
+php core/components/reactions/cli.php type create --name=cheers --emoji=🥂 --ordering=250
+php core/components/reactions/cli.php set attach --key=bar --types=cheers
 ```
 
 ### Пересчёт после импорта

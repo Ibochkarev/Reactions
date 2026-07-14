@@ -27,7 +27,7 @@ Reactions вызывает системные события при измене
 1. Origin + CSRF + nonce (API layer)
 2. IdentityResolver (fingerprint / user_id)
 3. BotDetector + ReactionBan + RateLimiter
-4. reactions_allowed_classes + существование объекта
+4. Существование объекта (короткий class_key → FQCN/STI + object_id)
 5. Тип активен; тип ∈ набор (set); для set=full — reactions_full_types
 6. OnBeforeReaction  ← можно cancel
 7. Транзакция БД (insert / update / delete)
@@ -41,7 +41,7 @@ Reactions вызывает системные события при измене
 Важно:
 
 - На шаге 8–9 **агрегат ещё не пересчитан**. Читать `ReactionAggregate` из плагина `OnAfter*` для «свежих» чисел нельзя — либо пересчитайте сами, либо ориентируйтесь на поля `request` / `action`, либо подпишитесь на webhook (он уходит уже после recount в текущем flow сервиса — webhook получает `ReactionResult` с уже новыми counts).
-- `OnBeforeReaction` срабатывает **после** rate limit и allowlist. Отмена не возвращает «слот» rate limit за этот запрос (лимит уже учтён).
+- `OnBeforeReaction` срабатывает **после** rate limit и проверки объекта. Отмена не возвращает «слот» rate limit за этот запрос (лимит уже учтён).
 
 ---
 

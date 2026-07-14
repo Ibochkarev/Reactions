@@ -1,36 +1,38 @@
 <?php
-
 namespace Reactions\Model\mysql;
+
+use xPDO\xPDO;
 
 class ReactionBan extends \Reactions\Model\ReactionBan
 {
+
     public static $metaMap = array (
         'package' => 'Reactions\\Model',
         'version' => '3.0',
         'table' => 'reactions_bans',
         'extends' => 'xPDO\\Om\\xPDOSimpleObject',
-        'tableMeta' =>
+        'tableMeta' => 
         array (
             'engine' => 'InnoDB',
         ),
-        'fields' =>
+        'fields' => 
         array (
-            'ip_hash' => null,
-            'user_id' => null,
+            'ip_hash' => NULL,
+            'user_id' => NULL,
             'reason' => '',
             'created_at' => 0,
-            'expires_at' => null,
+            'expires_at' => NULL,
         ),
-        'fieldMeta' =>
+        'fieldMeta' => 
         array (
-            'ip_hash' =>
+            'ip_hash' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '64',
                 'phptype' => 'string',
                 'null' => true,
             ),
-            'user_id' =>
+            'user_id' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -38,7 +40,7 @@ class ReactionBan extends \Reactions\Model\ReactionBan
                 'phptype' => 'integer',
                 'null' => true,
             ),
-            'reason' =>
+            'reason' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '255',
@@ -46,7 +48,7 @@ class ReactionBan extends \Reactions\Model\ReactionBan
                 'null' => true,
                 'default' => '',
             ),
-            'created_at' =>
+            'created_at' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -55,7 +57,7 @@ class ReactionBan extends \Reactions\Model\ReactionBan
                 'null' => false,
                 'default' => 0,
             ),
-            'expires_at' =>
+            'expires_at' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -64,17 +66,17 @@ class ReactionBan extends \Reactions\Model\ReactionBan
                 'null' => true,
             ),
         ),
-        'indexes' =>
+        'indexes' => 
         array (
-            'ip_hash' =>
+            'ip_hash' => 
             array (
                 'alias' => 'ip_hash',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'ip_hash' =>
+                    'ip_hash' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -82,15 +84,15 @@ class ReactionBan extends \Reactions\Model\ReactionBan
                     ),
                 ),
             ),
-            'user_id' =>
+            'user_id' => 
             array (
                 'alias' => 'user_id',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'user_id' =>
+                    'user_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -100,4 +102,5 @@ class ReactionBan extends \Reactions\Model\ReactionBan
             ),
         ),
     );
+
 }

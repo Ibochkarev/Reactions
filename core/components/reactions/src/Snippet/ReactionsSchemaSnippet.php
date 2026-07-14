@@ -32,7 +32,7 @@ class ReactionsSchemaSnippet extends AbstractSnippet
         } elseif ($likes > 0) {
             $schema['ratingCount'] = $likes;
         } else {
-            return '';
+            return $this->finish('', $scriptProperties);
         }
 
         $json = json_encode(
@@ -40,6 +40,9 @@ class ReactionsSchemaSnippet extends AbstractSnippet
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
         );
 
-        return '<script type="application/ld+json">' . $json . '</script>';
+        return $this->finish(
+            '<script type="application/ld+json">' . $json . '</script>',
+            $scriptProperties,
+        );
     }
 }

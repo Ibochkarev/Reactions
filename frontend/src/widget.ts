@@ -11,6 +11,29 @@ export interface WidgetState {
 }
 
 const REACTIONS_SCRIPT_RE = /(?:^|\/)components\/reactions\/js\/web\/reactions\.js(?:\?|$)/i;
+const UPDATED_EVENT = 'reactions:updated';
+
+interface WidgetUpdatedDetail {
+  classKey: string;
+  objectId: number;
+  context: string;
+  counts: Record<string, number>;
+  userReactions: string[];
+  source: ReactionsWidget;
+}
+
+function parseDataFlag(value: string | undefined, fallback: boolean): boolean {
+  if (value === undefined || value === '') {
+    return fallback;
+  }
+
+  return value === '1' || value.toLowerCase() === 'true' || value === 'yes';
+}
+
+/** Mirrors ReactionService::isSingleReactionMode */
+export function isExclusiveMode(config: Pick<WidgetConfig, 'exclusive' | 'allowMultiple'>): boolean {
+  return config.exclusive || !config.allowMultiple;
+}
 
 /**
  * Resolve API URL: data-api → window.Reactions.config.api → path relative to reactions.js.
@@ -61,12 +84,14 @@ export function parseConfig(el: HTMLElement): WidgetConfig | null {
   const context = el.dataset.context ?? 'web';
   const csrf = el.dataset.csrf ?? '';
   const types = parseTypeNamesFromElement(el);
+  const exclusive = parseDataFlag(el.dataset.exclusive, set === 'updown');
+  const allowMultiple = parseDataFlag(el.dataset.allowMultiple, false);
 
   if (!api || !classKey || !Number.isFinite(objectId) || objectId <= 0) {
     return null;
   }
 
-  return { api, classKey, objectId, set, context, csrf, types };
+  return { api, classKey, objectId, set, context, csrf, types, exclusive, allowMultiple };
 }
 
 /**
@@ -122,6 +147,24 @@ export class ReactionsWidget {
   readonly types: ReactionTypeDef[];
   state: WidgetState;
   private groupEl: HTMLElement | null = null;
+  private readonly onExternalUpdate = (event: Event): void => {
+    const detail = (event as CustomEvent<WidgetUpdatedDetail>).detail;
+    if (!detail || detail.source === this || this.state.pending) {
+      return;
+    }
+    if (
+      detail.classKey !== this.config.classKey
+      || detail.objectId !== this.config.objectId
+      || detail.context !== this.config.context
+    ) {
+      return;
+    }
+
+    this.state.counts = { ...detail.counts };
+    this.state.userReactions = [...detail.userReactions];
+    this.state.error = null;
+    this.render();
+  };
 
   constructor(el: HTMLElement, config: WidgetConfig) {
     this.el = el;
@@ -139,13 +182,13 @@ export class ReactionsWidget {
     this.el.classList.add('reactions-widget');
     this.el.setAttribute('role', 'group');
     this.el.setAttribute('aria-label', 'Reactions');
+    window.addEventListener(UPDATED_EVENT, this.onExternalUpdate);
   }
 
   async init(): Promise<void> {
     try {
-      if (!this.state.csrf) {
-        this.state.csrf = await getCsrf(this.config.api);
-      }
+      // Always sync with the live session — SSR/cache tokens go stale.
+      this.state.csrf = await getCsrf(this.config.api);
 
       const data = await fetchCounts(
         this.config.api,
@@ -169,8 +212,26 @@ export class ReactionsWidget {
     this.state.userReactions = [...data.user_reaction];
   }
 
+  private broadcastUpdate(): void {
+    window.dispatchEvent(
+      new CustomEvent<WidgetUpdatedDetail>(UPDATED_EVENT, {
+        detail: {
+          classKey: this.config.classKey,
+          objectId: this.config.objectId,
+          context: this.config.context,
+          counts: { ...this.state.counts },
+          userReactions: [...this.state.userReactions],
+          source: this,
+        },
+      }),
+    );
+  }
+
   render(): void {
     this.el.innerHTML = '';
+    const busy = this.state.loading || this.state.pending;
+    this.el.dataset.loading = busy ? 'true' : 'false';
+    this.el.setAttribute('aria-busy', busy ? 'true' : 'false');
 
     if (this.state.error && this.state.loading === false && Object.keys(this.state.counts).length === 0) {
       const errorEl = document.createElement('p');
@@ -190,6 +251,14 @@ export class ReactionsWidget {
     }
 
     this.el.appendChild(this.groupEl);
+
+    if (this.state.error) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'reactions-widget__error';
+      errorEl.setAttribute('role', 'alert');
+      errorEl.textContent = this.state.error;
+      this.el.appendChild(errorEl);
+    }
   }
 
   private createButton(type: ReactionTypeDef): HTMLButtonElement {
@@ -199,7 +268,7 @@ export class ReactionsWidget {
 
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'reactions-widget__button';
+    button.className = 'reactions-widget__button' + (pressed ? ' is-active' : '');
     button.dataset.type = type.name;
     button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
     button.setAttribute('aria-label', `${type.name}${count > 0 ? `, ${count}` : ''}`);
@@ -213,6 +282,7 @@ export class ReactionsWidget {
     const countEl = document.createElement('span');
     countEl.className = 'reactions-widget__count';
     countEl.textContent = String(count);
+    countEl.hidden = count === 0;
 
     button.append(emoji, countEl);
     button.addEventListener('click', () => void this.handleClick(type.name));
@@ -244,41 +314,59 @@ export class ReactionsWidget {
     this.state.error = null;
     this.render();
 
+    let synced = false;
     try {
-      const payload = {
-        csrf: this.state.csrf,
-        nonce: createNonce(),
-        class_key: this.config.classKey,
-        object_id: this.config.objectId,
-        type: typeName,
-        context: this.config.context,
-        set: this.config.set,
-      };
-
-      const result = isActive
-        ? await unreact(this.config.api, payload)
-        : await react(this.config.api, payload);
-
+      const result = await this.sendReaction(typeName, isActive);
       this.state.counts = { ...result.counts };
       this.state.userReactions = [...result.user_reaction];
+      synced = true;
     } catch (err) {
-      this.state.counts = snapshot.counts;
-      this.state.userReactions = snapshot.userReactions;
-      this.state.error = err instanceof Error ? err.message : 'Reaction failed';
-
-      try {
-        this.state.csrf = await getCsrf(this.config.api);
-      } catch {
-        // Keep existing token if refresh fails.
+      const refreshed = await this.refreshCsrfAndRetry(typeName, isActive);
+      if (refreshed) {
+        this.state.counts = { ...refreshed.counts };
+        this.state.userReactions = [...refreshed.user_reaction];
+        synced = true;
+      } else {
+        this.state.counts = snapshot.counts;
+        this.state.userReactions = snapshot.userReactions;
+        this.state.error = err instanceof Error ? err.message : 'Reaction failed';
       }
     } finally {
       this.state.pending = false;
       this.render();
+      if (synced) {
+        this.broadcastUpdate();
+      }
+    }
+  }
+
+  private async sendReaction(typeName: string, isActive: boolean) {
+    const payload = {
+      csrf: this.state.csrf,
+      nonce: createNonce(),
+      class_key: this.config.classKey,
+      object_id: this.config.objectId,
+      type: typeName,
+      context: this.config.context,
+      set: this.config.set,
+    };
+
+    return isActive
+      ? unreact(this.config.api, payload)
+      : react(this.config.api, payload);
+  }
+
+  private async refreshCsrfAndRetry(typeName: string, isActive: boolean) {
+    try {
+      this.state.csrf = await getCsrf(this.config.api);
+      return await this.sendReaction(typeName, isActive);
+    } catch {
+      return null;
     }
   }
 
   applyOptimistic(typeName: string, isActive: boolean): void {
-    const exclusive = this.config.set === 'updown';
+    const exclusive = isExclusiveMode(this.config);
 
     if (isActive) {
       this.state.userReactions = this.state.userReactions.filter((name) => name !== typeName);

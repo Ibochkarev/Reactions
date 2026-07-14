@@ -24,17 +24,19 @@ class TrendingController extends AbstractController
 
         JsonResponse::success([
             'data' => [
-                'items' => array_map(static fn (ReactionAggregate $row): array => [
-                    'class_key' => $row->get('class_key'),
-                    'object_id' => (int) $row->get('object_id'),
-                    'context' => $row->get('context'),
-                    'counts' => $row->get('counts') ?? [],
-                    'total' => (int) $row->get('total'),
-                    'likes' => (int) $row->get('likes'),
-                    'dislikes' => (int) $row->get('dislikes'),
-                    'rating' => (int) $row->get('rating'),
-                    'trending_score' => (float) $row->get('trending_score'),
-                ], $items),
+                'items' => array_map(static function (ReactionAggregate $row) use ($aggregate): array {
+                    return [
+                        'class_key' => $row->get('object_class'),
+                        'object_id' => (int) $row->get('object_id'),
+                        'context' => $row->get('context'),
+                        'counts' => $aggregate->decodeCounts($row->get('counts')),
+                        'total' => (int) $row->get('total'),
+                        'likes' => (int) $row->get('likes'),
+                        'dislikes' => (int) $row->get('dislikes'),
+                        'rating' => (int) $row->get('rating'),
+                        'trending_score' => (float) $row->get('trending_score'),
+                    ];
+                }, $items),
                 'limit' => $limit,
                 'offset' => $offset,
                 'total' => count($items),

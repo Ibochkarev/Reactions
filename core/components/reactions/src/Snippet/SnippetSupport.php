@@ -8,6 +8,7 @@ use Reactions\Model\ReactionSet;
 use Reactions\Model\ReactionSetType;
 use Reactions\Model\ReactionType;
 use Reactions\Reactions;
+use Reactions\Support\Counts;
 use Reactions\Support\TypeFilter;
 
 trait SnippetSupport
@@ -57,7 +58,7 @@ trait SnippetSupport
 
         $types = [];
         foreach ($links as $link) {
-            $type = $link->getOne('Type');
+            $type = $reactions->modx->getObject(ReactionType::class, (int) $link->get('type_id'));
             if ($type instanceof ReactionType && (bool) $type->get('active')) {
                 $types[] = $type;
             }
@@ -84,12 +85,13 @@ trait SnippetSupport
     }
 
     /**
-     * @param array<string, int> $counts
+     * @param array<string, mixed> $counts
      *
      * @return array{likes: int, dislikes: int, rating: int, total: int}
      */
     protected function metricsFromCounts(array $counts): array
     {
+        $counts = Counts::normalize($counts);
         $likes = $this->sumTypeCounts($counts, ['like', 'up']);
         $dislikes = $this->sumTypeCounts($counts, ['dislike', 'down']);
 
@@ -97,7 +99,7 @@ trait SnippetSupport
             'likes' => $likes,
             'dislikes' => $dislikes,
             'rating' => $likes - $dislikes,
-            'total' => array_sum($counts),
+            'total' => Counts::total($counts),
         ];
     }
 

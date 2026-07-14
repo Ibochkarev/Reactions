@@ -11,8 +11,8 @@
   - `github` — 👍 👎 ❤️ 😂 😮 😢 😡 🎉;
   - `full` — расширенный набор (24 типа): `github` + 🚀👀🔥👏🤔🥳⭐🍺✨💯🙏💪😎😍😕🙌.
 - Пользовательские реакции и собственные наборы — без программирования, через CLI или REST.
-- Реакции на любой объект: ресурс, товар miniShop3, комментарий Tickets — модель хранит `class_key`, `object_id`, `context`.
-- Повторное нажатие снимает реакцию, выбор другой — заменяет её. Настройка `allowMultiple` разрешает несколько реакций одновременно.
+- Реакции на любой объект: ресурс, товар miniShop3, комментарий Tickets. В API/сниппетах — `class` / `class_key`; в БД поле называется `object_class` (STI xPDO).
+- Повторное нажатие снимает реакцию. Другая реакция заменяет предыдущую в exclusive-режиме. Несколько типов сразу — только если набор не exclusive и включён `reactions_allow_multiple`.
 - Стратегии идентификации посетителя: только авторизованные, IP, IP + Cookie, Session.
 - Статистика и топы: за день, неделю, месяц, год, всё время; trending по формуле Reddit.
 - Rate limit, защита от ботов, CSRF, Origin check, replay protection.
@@ -32,6 +32,8 @@
 composer install
 php _build/build.php
 ```
+
+`build.php` сам ставит npm-зависимости и собирает виджет (`frontend/` → `assets/…/js/web/`). Нужны Node.js и `npm` в PATH. Вручную: `cd frontend && npm install && npm run build`.
 
 ## Быстрый старт
 
@@ -69,7 +71,7 @@ php _build/build.php
 
 ```
 [[!msProducts?
-    &leftJoin=`{"Aggregate":{"class":"ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.class_key = 'msProduct'"}}`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = 'msProduct'"}}`
     &sortby=`Aggregate.likes`
     &sortdir=`DESC`
 ]]
@@ -103,11 +105,13 @@ php _build/build.php
 | --- | --- |
 | pdoTools | [docs/integrations/pdotools.md](docs/integrations/pdotools.md) |
 | miniShop3 | [docs/integrations/minishop3.md](docs/integrations/minishop3.md) |
-| Tickets | [docs/integrations/tickets.md](docs/integrations/tickets.md) |
+| Tickets | [docs/integrations/tickets.md](docs/integrations/tickets.md) (MODX 3: не проверено) |
 | Collections | [docs/integrations/collections.md](docs/integrations/collections.md) |
 | SEO / Schema.org | [docs/integrations/seo.md](docs/integrations/seo.md) |
 
 ## CLI
+
+Из корня сайта MODX:
 
 ```bash
 php core/components/reactions/cli.php recount
@@ -115,6 +119,8 @@ php core/components/reactions/cli.php type create --name=favorite --emoji=⭐
 php core/components/reactions/cli.php ban add --ip=203.0.113.10
 php core/components/reactions/cli.php stats
 ```
+
+Подробности: [docs/cli.md](docs/cli.md).
 
 ## Статус
 

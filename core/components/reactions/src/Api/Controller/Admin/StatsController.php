@@ -48,7 +48,7 @@ class StatsController extends AbstractController
         $items = [];
         foreach ($this->modx()->getCollection(ReactionAggregate::class, $query) as $row) {
             $items[] = [
-                'class_key' => $row->get('class_key'),
+                'class_key' => $row->get('object_class'),
                 'object_id' => (int) $row->get('object_id'),
                 'context' => $row->get('context'),
                 'likes' => (int) $row->get('likes'),

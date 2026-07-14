@@ -56,12 +56,12 @@ class RecountCommand extends AbstractCommand
 
         foreach ($this->modx->getCollection(Reaction::class) as $reaction) {
             $key = $this->targetKey(
-                (string) $reaction->get('class_key'),
+                (string) $reaction->get('object_class'),
                 (int) $reaction->get('object_id'),
                 (string) $reaction->get('context'),
             );
             $seen[$key] = [
-                'class_key' => (string) $reaction->get('class_key'),
+                'class_key' => (string) $reaction->get('object_class'),
                 'object_id' => (int) $reaction->get('object_id'),
                 'context' => (string) $reaction->get('context'),
             ];
@@ -69,12 +69,12 @@ class RecountCommand extends AbstractCommand
 
         foreach ($this->modx->getCollection(ReactionAggregate::class) as $row) {
             $key = $this->targetKey(
-                (string) $row->get('class_key'),
+                (string) $row->get('object_class'),
                 (int) $row->get('object_id'),
                 (string) $row->get('context'),
             );
             $seen[$key] = [
-                'class_key' => (string) $row->get('class_key'),
+                'class_key' => (string) $row->get('object_class'),
                 'object_id' => (int) $row->get('object_id'),
                 'context' => (string) $row->get('context'),
             ];

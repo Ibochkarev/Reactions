@@ -1,34 +1,36 @@
 <?php
-
 namespace Reactions\Model\mysql;
+
+use xPDO\xPDO;
 
 class Reaction extends \Reactions\Model\Reaction
 {
+
     public static $metaMap = array (
         'package' => 'Reactions\\Model',
         'version' => '3.0',
         'table' => 'reactions',
         'extends' => 'xPDO\\Om\\xPDOSimpleObject',
-        'tableMeta' =>
+        'tableMeta' => 
         array (
             'engine' => 'InnoDB',
         ),
-        'fields' =>
+        'fields' => 
         array (
-            'class_key' => '',
+            'object_class' => '',
             'object_id' => 0,
             'context' => 'web',
             'type_id' => 0,
-            'user_id' => null,
+            'user_id' => NULL,
             'fingerprint' => '',
-            'ip_hash' => null,
-            'session_id' => null,
+            'ip_hash' => NULL,
+            'session_id' => NULL,
             'created_at' => 0,
             'updated_at' => 0,
         ),
-        'fieldMeta' =>
+        'fieldMeta' => 
         array (
-            'class_key' =>
+            'object_class' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '100',
@@ -36,7 +38,7 @@ class Reaction extends \Reactions\Model\Reaction
                 'null' => false,
                 'default' => '',
             ),
-            'object_id' =>
+            'object_id' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -45,7 +47,7 @@ class Reaction extends \Reactions\Model\Reaction
                 'null' => false,
                 'default' => 0,
             ),
-            'context' =>
+            'context' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '100',
@@ -53,7 +55,7 @@ class Reaction extends \Reactions\Model\Reaction
                 'null' => false,
                 'default' => 'web',
             ),
-            'type_id' =>
+            'type_id' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -62,7 +64,7 @@ class Reaction extends \Reactions\Model\Reaction
                 'null' => false,
                 'default' => 0,
             ),
-            'user_id' =>
+            'user_id' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -70,7 +72,7 @@ class Reaction extends \Reactions\Model\Reaction
                 'phptype' => 'integer',
                 'null' => true,
             ),
-            'fingerprint' =>
+            'fingerprint' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '64',
@@ -78,21 +80,21 @@ class Reaction extends \Reactions\Model\Reaction
                 'null' => false,
                 'default' => '',
             ),
-            'ip_hash' =>
+            'ip_hash' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '64',
                 'phptype' => 'string',
                 'null' => true,
             ),
-            'session_id' =>
+            'session_id' => 
             array (
                 'dbtype' => 'varchar',
                 'precision' => '128',
                 'phptype' => 'string',
                 'null' => true,
             ),
-            'created_at' =>
+            'created_at' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -101,7 +103,7 @@ class Reaction extends \Reactions\Model\Reaction
                 'null' => false,
                 'default' => 0,
             ),
-            'updated_at' =>
+            'updated_at' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -111,41 +113,41 @@ class Reaction extends \Reactions\Model\Reaction
                 'default' => 0,
             ),
         ),
-        'indexes' =>
+        'indexes' => 
         array (
-            'unique_reaction' =>
+            'unique_reaction' => 
             array (
                 'alias' => 'unique_reaction',
                 'primary' => false,
                 'unique' => true,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'class_key' =>
+                    'object_class' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'object_id' =>
+                    'object_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'context' =>
+                    'context' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'fingerprint' =>
+                    'fingerprint' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'type_id' =>
+                    'type_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -153,27 +155,27 @@ class Reaction extends \Reactions\Model\Reaction
                     ),
                 ),
             ),
-            'object' =>
+            'object' => 
             array (
                 'alias' => 'object',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'class_key' =>
+                    'object_class' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'object_id' =>
+                    'object_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'context' =>
+                    'context' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -181,15 +183,15 @@ class Reaction extends \Reactions\Model\Reaction
                     ),
                 ),
             ),
-            'created_at' =>
+            'created_at' => 
             array (
                 'alias' => 'created_at',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'created_at' =>
+                    'created_at' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -197,15 +199,15 @@ class Reaction extends \Reactions\Model\Reaction
                     ),
                 ),
             ),
-            'user_id' =>
+            'user_id' => 
             array (
                 'alias' => 'user_id',
                 'primary' => false,
                 'unique' => false,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'user_id' =>
+                    'user_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -214,11 +216,11 @@ class Reaction extends \Reactions\Model\Reaction
                 ),
             ),
         ),
-        'aggregates' =>
+        'aggregates' => 
         array (
-            'Type' =>
+            'Type' => 
             array (
-                'class' => 'ReactionType',
+                'class' => 'Reactions\\Model\\ReactionType',
                 'local' => 'type_id',
                 'foreign' => 'id',
                 'cardinality' => 'one',
@@ -226,4 +228,5 @@ class Reaction extends \Reactions\Model\Reaction
             ),
         ),
     );
+
 }

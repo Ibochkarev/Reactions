@@ -85,6 +85,19 @@ if ($transport->xpdo) {
                     }
                 }
             }
+
+            // class_key is reserved by xPDO STI; store polymorphic target as object_class.
+            $prefix = $modx->getOption('table_prefix');
+            foreach (['reactions', 'reactions_aggregates'] as $table) {
+                $full = $prefix . $table;
+                $stmt = $modx->query("SHOW COLUMNS FROM `{$full}` LIKE 'class_key'");
+                if ($stmt && $stmt->fetch()) {
+                    $modx->exec(
+                        "ALTER TABLE `{$full}` CHANGE `class_key` `object_class` VARCHAR(100) NOT NULL DEFAULT ''"
+                    );
+                    $modx->log(modX::LOG_LEVEL_INFO, '[Reactions] Renamed ' . $full . '.class_key → object_class');
+                }
+            }
             break;
 
         case xPDOTransport::ACTION_UNINSTALL:

@@ -1,27 +1,29 @@
 <?php
-
 namespace Reactions\Model\mysql;
+
+use xPDO\xPDO;
 
 class ReactionSetType extends \Reactions\Model\ReactionSetType
 {
+
     public static $metaMap = array (
         'package' => 'Reactions\\Model',
         'version' => '3.0',
         'table' => 'reactions_set_types',
         'extends' => 'xPDO\\Om\\xPDOSimpleObject',
-        'tableMeta' =>
+        'tableMeta' => 
         array (
             'engine' => 'InnoDB',
         ),
-        'fields' =>
+        'fields' => 
         array (
             'set_id' => 0,
             'type_id' => 0,
             'ordering' => 0,
         ),
-        'fieldMeta' =>
+        'fieldMeta' => 
         array (
-            'set_id' =>
+            'set_id' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -30,7 +32,7 @@ class ReactionSetType extends \Reactions\Model\ReactionSetType
                 'null' => false,
                 'default' => 0,
             ),
-            'type_id' =>
+            'type_id' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -39,7 +41,7 @@ class ReactionSetType extends \Reactions\Model\ReactionSetType
                 'null' => false,
                 'default' => 0,
             ),
-            'ordering' =>
+            'ordering' => 
             array (
                 'dbtype' => 'int',
                 'precision' => '10',
@@ -49,23 +51,23 @@ class ReactionSetType extends \Reactions\Model\ReactionSetType
                 'default' => 0,
             ),
         ),
-        'indexes' =>
+        'indexes' => 
         array (
-            'set_type' =>
+            'set_type' => 
             array (
                 'alias' => 'set_type',
                 'primary' => false,
                 'unique' => true,
                 'type' => 'BTREE',
-                'columns' =>
+                'columns' => 
                 array (
-                    'set_id' =>
+                    'set_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
                         'null' => false,
                     ),
-                    'type_id' =>
+                    'type_id' => 
                     array (
                         'length' => '',
                         'collation' => 'A',
@@ -74,19 +76,19 @@ class ReactionSetType extends \Reactions\Model\ReactionSetType
                 ),
             ),
         ),
-        'aggregates' =>
+        'aggregates' => 
         array (
-            'Set' =>
+            'Set' => 
             array (
-                'class' => 'ReactionSet',
+                'class' => 'Reactions\\Model\\ReactionSet',
                 'local' => 'set_id',
                 'foreign' => 'id',
                 'cardinality' => 'one',
                 'owner' => 'foreign',
             ),
-            'Type' =>
+            'Type' => 
             array (
-                'class' => 'ReactionType',
+                'class' => 'Reactions\\Model\\ReactionType',
                 'local' => 'type_id',
                 'foreign' => 'id',
                 'cardinality' => 'one',
@@ -94,4 +96,5 @@ class ReactionSetType extends \Reactions\Model\ReactionSetType
             ),
         ),
     );
+
 }

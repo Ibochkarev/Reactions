@@ -7,6 +7,10 @@ export interface WidgetConfig {
   csrf: string;
   /** undefined = no data-types attr; [] = empty filter (show no buttons) */
   types?: string[];
+  /** Mirrors ReactionSet.exclusive when provided via data-exclusive */
+  exclusive: boolean;
+  /** Mirrors reactions_allow_multiple / data-allow-multiple */
+  allowMultiple: boolean;
 }
 
 export interface ReactionsGlobalConfig {

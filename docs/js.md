@@ -33,13 +33,15 @@ Fenom:
 
 | Атрибут | Обязательный | Описание |
 | --- | --- | --- |
-| `data-class-key` | да | `class_key` объекта (`modResource`, `msProduct`…) |
+| `data-class-key` | да | Класс объекта (`modResource`, `msProduct`…) |
 | `data-object-id` | да | ID объекта (целое число > 0) |
 | `data-set` | нет | Ключ набора, по умолчанию `updown` |
 | `data-context` | нет | Контекст, по умолчанию `web` |
 | `data-csrf` | нет | CSRF-токен; если пустой, виджет запросит сам |
 | `data-api` | нет* | URL API. В SSR сниппета заполняется из `[[+api_url]]`. Без атрибута: `Reactions.config.api`, иначе путь от `reactions.js` (same-origin) |
 | `data-types` | нет | Имена типов через запятую. Атрибут отсутствует → каталог `data-set`. Пустая строка → 0 кнопок. Лишние имена вне набора игнорируются |
+| `data-exclusive` | нет | `1` если набор exclusive (SSR из сниппета) |
+| `data-allow-multiple` | нет | `1` если `reactions_allow_multiple` включён (SSR) |
 
 URL API берётся в таком порядке:
 
@@ -127,9 +129,11 @@ Reactions.init(container);
 
 Для кастомных наборов серверная валидация работает через API, но JS отрисует кнопки только если набор совпадает с `REACTION_SETS` в бандле. Для полностью кастомных наборов используйте серверный рендер через сниппет `Reactions` без JS или расширьте фронтенд.
 
-## Поведение updown
+## Exclusive и синхронизация
 
-Набор `updown` обрабатывается как взаимоисключающий на клиенте: при выборе новой реакции предыдущая снимается оптимистично до ответа сервера.
+Сервер считает режим exclusive, если набор `exclusive` **или** выключен `reactions_allow_multiple`. Сниппет пишет это в `data-exclusive` / `data-allow-multiple`; виджет зеркалит ту же логику: при exclusive другая кнопка снимает предыдущую (optimistic UI).
+
+Несколько виджетов на один объект (`class_key` + `object_id` + `context`) синхронизируются событием `reactions:updated` на `document` после успешного POST/DELETE.
 
 ## Доступность
 
@@ -144,14 +148,15 @@ Reactions.init(container);
 
 | Класс | Элемент |
 | --- | --- |
-| `.reactions-widget` | Контейнер |
+| `.reactions-widget` | Контейнер (`data-loading`, `aria-busy` при загрузке) |
 | `.reactions-widget__buttons` | Группа кнопок |
 | `.reactions-widget__button` | Кнопка реакции |
+| `.reactions-widget__button.is-active` / `[aria-pressed="true"]` | Выбранная реакция |
 | `.reactions-widget__emoji` | Эмодзи |
-| `.reactions-widget__count` | Счётчик |
+| `.reactions-widget__count` | Счётчик (скрыт при `0`) |
 | `.reactions-widget__error` | Сообщение об ошибке |
 
-Активная кнопка в серверном чанке: `.reactions-btn--active`. Виджет после инициализации перерисовывает DOM и использует свои классы.
+SSR и JS используют одни классы. Переопределяйте через CSS custom properties: `--reactions-border`, `--reactions-bg`, `--reactions-active-border`, `--reactions-muted` и др.
 
 ## AJAX после динамической подгрузки
 
@@ -169,7 +174,7 @@ document.getElementById('new-comments').addEventListener('load', () => {
 
 ## Сборка из исходников
 
-Исходники: `frontend/src/`. Сборка:
+Исходники: `frontend/src/`. При `php _build/build.php` виджет собирается автоматически (шаг `assets()`). Вручную:
 
 ```bash
 cd frontend
@@ -177,4 +182,4 @@ npm install
 npm run build
 ```
 
-Артефакт копируется в `assets/components/reactions/js/web/`.
+Vite пишет артефакты в `assets/components/reactions/js/web/` (`reactions.js`, `reactions.css`). Эти файлы и попадают в транспортный пакет.

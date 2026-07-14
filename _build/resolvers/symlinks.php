@@ -4,24 +4,33 @@
 /** @var array $options */
 /** @var modX $modx */
 
+/**
+ * Dev resolver: point the MODX install at Extras/Reactions sources.
+ * Extra repo keeps real directories (git-friendly); site uses symlinks.
+ */
 if ($transport->xpdo) {
     $modx = $transport->xpdo;
     $dev = MODX_BASE_PATH . 'Extras/Reactions/';
     $cache = $modx->getCacheManager();
     if (file_exists($dev) && $cache) {
-        if (!is_link($dev . 'assets/components/reactions')) {
+        $devCore = $dev . 'core/components/reactions';
+        $devAssets = $dev . 'assets/components/reactions';
+        $modxCore = MODX_CORE_PATH . 'components/reactions';
+        $modxAssets = MODX_ASSETS_PATH . 'components/reactions';
+
+        if (is_dir($devCore) && !is_link($devCore) && !is_link($modxCore)) {
             $cache->deleteTree(
-                $dev . 'assets/components/reactions/',
+                $modxCore,
                 ['deleteTop' => true, 'skipDirs' => false, 'extensions' => []]
             );
-            symlink(MODX_ASSETS_PATH . 'components/reactions/', $dev . 'assets/components/reactions');
+            symlink($devCore, $modxCore);
         }
-        if (!is_link($dev . 'core/components/reactions')) {
+        if (is_dir($devAssets) && !is_link($devAssets) && !is_link($modxAssets)) {
             $cache->deleteTree(
-                $dev . 'core/components/reactions/',
+                $modxAssets,
                 ['deleteTop' => true, 'skipDirs' => false, 'extensions' => []]
             );
-            symlink(MODX_CORE_PATH . 'components/reactions/', $dev . 'core/components/reactions');
+            symlink($devAssets, $modxAssets);
         }
     }
 }

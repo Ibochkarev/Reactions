@@ -14,6 +14,7 @@ use Reactions\Model\ReactionSet;
 use Reactions\Model\ReactionSetType;
 use Reactions\Model\ReactionType;
 use Reactions\Reactions;
+use Reactions\Support\ObjectLookup;
 use Reactions\Support\TypeFilter;
 
 class ReactionService
@@ -81,28 +82,17 @@ class ReactionService
 
     private function assertObjectExists(ReactionRequest $request): void
     {
-        $this->assertClassAllowed($request->classKey);
-
-        if (!$this->reactions->modx->getObject($request->classKey, $request->objectId)) {
+        if (!$this->objectExists($request->classKey, $request->objectId)) {
             throw new ObjectNotFound($this->reactions->modx->lexicon('reactions_err_nf'));
         }
     }
 
-    private function assertClassAllowed(string $classKey): void
+    /**
+     * Resolve aliases/STI (e.g. msProduct → MiniShop3\Model\msProduct / modResource).
+     */
+    private function objectExists(string $classKey, int $objectId): bool
     {
-        $raw = (string) $this->reactions->modx->getOption(
-            'reactions_allowed_classes',
-            null,
-            'modResource,msProduct,TicketComment'
-        );
-        $allowed = array_values(array_filter(array_map('trim', explode(',', $raw))));
-        if ($allowed === []) {
-            return;
-        }
-
-        if (!in_array($classKey, $allowed, true)) {
-            throw new ReactionNotAllowed($this->reactions->modx->lexicon('reactions_err_forbidden'));
-        }
+        return ObjectLookup::exists($this->reactions->modx, $classKey, $objectId);
     }
 
     private function loadType(string $typeName): ReactionType
@@ -198,7 +188,7 @@ class ReactionService
     private function findOthers(ReactionRequest $request, VisitorIdentity $identity, int $typeId): array
     {
         return array_values($this->reactions->modx->getCollection(Reaction::class, [
-            'class_key' => $request->classKey,
+            'object_class' => $request->classKey,
             'object_id' => $request->objectId,
             'context' => $request->context,
             'fingerprint' => $identity->fingerprint,
@@ -209,7 +199,7 @@ class ReactionService
     private function findByType(ReactionRequest $request, VisitorIdentity $identity, int $typeId): ?Reaction
     {
         return $this->reactions->modx->getObject(Reaction::class, [
-            'class_key' => $request->classKey,
+            'object_class' => $request->classKey,
             'object_id' => $request->objectId,
             'context' => $request->context,
             'fingerprint' => $identity->fingerprint,
@@ -222,7 +212,7 @@ class ReactionService
         $now = time();
         $reaction = $this->reactions->modx->newObject(Reaction::class);
         $reaction->fromArray([
-            'class_key' => $request->classKey,
+            'object_class' => $request->classKey,
             'object_id' => $request->objectId,
             'context' => $request->context,
             'type_id' => $typeId,
@@ -291,7 +281,7 @@ class ReactionService
     {
         return new ReactionResult(
             $action,
-            (array) $aggregate->get('counts'),
+            $this->reactions->getAggregateService()->decodeCounts($aggregate->get('counts')),
             (int) $aggregate->get('total'),
             $this->reactions->getAggregateService()->getUserReactions($request->classKey, $request->objectId, $request->context, $identity),
             $request->typeName,

@@ -16,6 +16,24 @@ if ($transport->xpdo) {
         case xPDOTransport::ACTION_UPGRADE:
             $modx->addPackage('Reactions\\Model\\', MODX_CORE_PATH . 'components/reactions/src/', null, 'Reactions\\');
 
+            $legacyAllowlist = $modx->getObject(\MODX\Revolution\modSystemSetting::class, [
+                'key' => 'reactions_allowed_classes',
+            ]) ?: $modx->getObject('modSystemSetting', ['key' => 'reactions_allowed_classes']);
+            if ($legacyAllowlist) {
+                $legacyAllowlist->remove();
+            }
+
+            $typesTable = $modx->getTableName(ReactionType::class);
+            $checkSql = "SHOW TABLES LIKE '" . trim((string) $typesTable, '`') . "'";
+            $checkStmt = $modx->prepare($checkSql);
+            if (!$checkStmt || !$checkStmt->execute() || !$checkStmt->fetchAll()) {
+                $modx->log(
+                    modX::LOG_LEVEL_ERROR,
+                    '[Reactions] Skipping presets: table ' . $typesTable . ' does not exist (tables resolver must run first).'
+                );
+                break;
+            }
+
             $types = [
                 'like' => ['emoji' => '👍', 'ordering' => 10],
                 'dislike' => ['emoji' => '👎', 'ordering' => 20],

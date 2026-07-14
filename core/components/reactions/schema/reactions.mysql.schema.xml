@@ -26,7 +26,7 @@
             <column key="key" length="" collation="A" null="false"/>
         </index>
 
-        <composite alias="SetTypes" class="ReactionSetType" local="id" foreign="set_id" cardinality="many" owner="local"/>
+        <composite alias="SetTypes" class="Reactions\Model\ReactionSetType" local="id" foreign="set_id" cardinality="many" owner="local"/>
     </object>
 
     <object class="ReactionSetType" table="reactions_set_types" extends="xPDO\Om\xPDOSimpleObject">
@@ -39,12 +39,12 @@
             <column key="type_id" length="" collation="A" null="false"/>
         </index>
 
-        <aggregate alias="Set" class="ReactionSet" local="set_id" foreign="id" cardinality="one" owner="foreign"/>
-        <aggregate alias="Type" class="ReactionType" local="type_id" foreign="id" cardinality="one" owner="foreign"/>
+        <aggregate alias="Set" class="Reactions\Model\ReactionSet" local="set_id" foreign="id" cardinality="one" owner="foreign"/>
+        <aggregate alias="Type" class="Reactions\Model\ReactionType" local="type_id" foreign="id" cardinality="one" owner="foreign"/>
     </object>
 
     <object class="Reaction" table="reactions" extends="xPDO\Om\xPDOSimpleObject">
-        <field key="class_key" dbtype="varchar" precision="100" phptype="string" null="false" default=""/>
+        <field key="object_class" dbtype="varchar" precision="100" phptype="string" null="false" default=""/>
         <field key="object_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
         <field key="context" dbtype="varchar" precision="100" phptype="string" null="false" default="web"/>
         <field key="type_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
@@ -56,14 +56,14 @@
         <field key="updated_at" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
 
         <index alias="unique_reaction" name="unique_reaction" primary="false" unique="true" type="BTREE">
-            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="object_class" length="" collation="A" null="false"/>
             <column key="object_id" length="" collation="A" null="false"/>
             <column key="context" length="" collation="A" null="false"/>
             <column key="fingerprint" length="" collation="A" null="false"/>
             <column key="type_id" length="" collation="A" null="false"/>
         </index>
         <index alias="object" name="object" primary="false" unique="false" type="BTREE">
-            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="object_class" length="" collation="A" null="false"/>
             <column key="object_id" length="" collation="A" null="false"/>
             <column key="context" length="" collation="A" null="false"/>
         </index>
@@ -74,11 +74,11 @@
             <column key="user_id" length="" collation="A" null="true"/>
         </index>
 
-        <aggregate alias="Type" class="ReactionType" local="type_id" foreign="id" cardinality="one" owner="foreign"/>
+        <aggregate alias="Type" class="Reactions\Model\ReactionType" local="type_id" foreign="id" cardinality="one" owner="foreign"/>
     </object>
 
     <object class="ReactionAggregate" table="reactions_aggregates" extends="xPDO\Om\xPDOSimpleObject">
-        <field key="class_key" dbtype="varchar" precision="100" phptype="string" null="false" default=""/>
+        <field key="object_class" dbtype="varchar" precision="100" phptype="string" null="false" default=""/>
         <field key="object_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
         <field key="context" dbtype="varchar" precision="100" phptype="string" null="false" default="web"/>
         <field key="counts" dbtype="text" phptype="json" null="false" default="{}"/>
@@ -90,7 +90,7 @@
         <field key="updated_at" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="0"/>
 
         <index alias="object_unique" name="object_unique" primary="false" unique="true" type="BTREE">
-            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="object_class" length="" collation="A" null="false"/>
             <column key="object_id" length="" collation="A" null="false"/>
             <column key="context" length="" collation="A" null="false"/>
         </index>
@@ -104,7 +104,7 @@
             <column key="trending_score" length="" collation="A" null="false"/>
         </index>
         <index alias="class_likes" name="class_likes" primary="false" unique="false" type="BTREE">
-            <column key="class_key" length="" collation="A" null="false"/>
+            <column key="object_class" length="" collation="A" null="false"/>
             <column key="likes" length="" collation="A" null="false"/>
         </index>
     </object>

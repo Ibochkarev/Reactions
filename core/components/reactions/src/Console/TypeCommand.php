@@ -55,7 +55,9 @@ class TypeCommand extends AbstractCommand
 
     private function list(): int
     {
-        $types = $this->modx->getCollection(ReactionType::class, [], false, true, ['ordering' => 'ASC']);
+        $query = $this->modx->newQuery(ReactionType::class);
+        $query->sortby('ordering', 'ASC');
+        $types = $this->modx->getCollection(ReactionType::class, $query);
         if ($types === []) {
             $this->writeln('No reaction types.');
 
@@ -84,13 +86,20 @@ class TypeCommand extends AbstractCommand
             ? $this->modx->getObject(ReactionType::class, $id)
             : $this->modx->getObject(ReactionType::class, ['name' => $name]);
 
-        if ($type === null || !$type->remove()) {
+        if ($type === null) {
             $this->writelnError('Type not found.');
 
             return 1;
         }
 
-        $this->writeln('Removed type #' . ($id > 0 ? $id : (int) $type->get('id')));
+        $typeId = (int) $type->get('id');
+        if (!$type->remove()) {
+            $this->writelnError('Failed to remove type.');
+
+            return 1;
+        }
+
+        $this->writeln("Removed type #{$typeId}");
 
         return 0;
     }

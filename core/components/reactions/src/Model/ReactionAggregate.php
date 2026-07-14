@@ -4,7 +4,7 @@ namespace Reactions\Model;
 
 /**
  * @property int $id
- * @property string $class_key
+ * @property string $object_class
  * @property int $object_id
  * @property string $context
  * @property array $counts

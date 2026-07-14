@@ -188,7 +188,9 @@ class SetCommand extends AbstractCommand
         $setId = (int) $set->get('id');
         $typeNames = [];
 
-        foreach ($this->modx->getCollection(ReactionSetType::class, ['set_id' => $setId], false, true, ['ordering' => 'ASC']) as $link) {
+        $query = $this->modx->newQuery(ReactionSetType::class, ['set_id' => $setId]);
+        $query->sortby('ordering', 'ASC');
+        foreach ($this->modx->getCollection(ReactionSetType::class, $query) as $link) {
             $type = $this->modx->getObject(ReactionType::class, (int) $link->get('type_id'));
             if ($type !== null) {
                 $typeNames[] = (string) $type->get('name');

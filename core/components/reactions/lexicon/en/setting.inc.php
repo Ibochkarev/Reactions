@@ -36,6 +36,3 @@ $_lang['setting_reactions_notify_authors_desc'] = 'Send a MODX message to the ob
 
 $_lang['setting_reactions_block_bots'] = 'Block bots';
 $_lang['setting_reactions_block_bots_desc'] = 'Reject reactions from known crawlers and bots.';
-
-$_lang['setting_reactions_allowed_classes'] = 'Allowed class keys';
-$_lang['setting_reactions_allowed_classes_desc'] = 'Comma-separated list of object class_key values that may receive reactions.';
