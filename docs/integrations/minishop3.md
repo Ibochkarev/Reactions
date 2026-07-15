@@ -64,7 +64,7 @@ Fenom:
 
 ## Сортировка каталога по популярности
 
-Через `msProducts` и `leftJoin`.
+Через `msProducts` и `leftJoin`. Из‑за `GROUP BY msProduct.id` в msProducts используйте `MAX(Aggregate.likes)`, не `Aggregate.likes` (см. [pdotools.md](pdotools.md)).
 
 MODX:
 
@@ -72,8 +72,8 @@ MODX:
 [[!msProducts?
     &parents=`10`
     &limit=`12`
-    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = 'msProduct'"}}`
-    &sortby=`Aggregate.likes`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\\\Model\\\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = 'msProduct'"}}`
+    &sortby=`MAX(Aggregate.likes)`
     &sortdir=`DESC`
     &tpl=`tpl.msProduct.card`
 ]]
@@ -82,11 +82,17 @@ MODX:
 Fenom:
 
 ```
+{set $rxProductJoin = [
+    'Aggregate' => [
+        'class' => 'Reactions\Model\ReactionAggregate',
+        'on' => "Aggregate.object_id = msProduct.id AND Aggregate.object_class = 'msProduct'",
+    ],
+]}
 {'!msProducts' | snippet : [
     'parents' => 10,
     'limit' => 12,
-    'leftJoin' => '{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = \'msProduct\'"}}',
-    'sortby' => 'Aggregate.likes',
+    'leftJoin' => $rxProductJoin,
+    'sortby' => 'MAX(Aggregate.likes)',
     'sortdir' => 'DESC',
     'tpl' => 'tpl.msProduct.card',
 ]}

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1-pl] - 2026-07-15
+
+### Added
+- `ReactionsCount`: live-обновление рядом с виджетом (`span.reactions-count` + `reactions:updated`) без F5
+
 ## [1.0.0-pl] - 2026-07-13
 
 ### Fixed
@@ -18,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `getCounts`: без долгого кеша карты счётчиков (SSR `ReactionsCount` не отставал от AJAX-виджета); `CountFormat` подставляет ключи по убыванию длины
 - `CountFormat`: неизвестный плейсхолдер типа (`{love}`…) → `0`, не сырой текст
 - Виджет: exclusive = набор exclusive **или** `!allow_multiple`; синхронизация соседних виджетов (`reactions:updated`); SSR-классы кнопок совпадают с JS
-- Dev-resolver симлинков: сайт → `Extras/Reactions` (исходники остаются в git)
+
 ### Removed
 - Настройка `reactions_allowed_classes` и серверный allowlist class_key: класс объекта задаётся в вызове сниппета/API; при апгрейде настройка удаляется
 

@@ -69,12 +69,12 @@ Tickets:
 [[!TopLiked? &period=`week` &limit=`10` &tpl=`tpl.top.row`]]
 ```
 
-Сортировка msProducts (pdoTools):
+Сортировка msProducts (pdoTools, `MAX` для совместимости с `GROUP BY`):
 
 ```
 [[!msProducts?
-    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = 'msProduct'"}}`
-    &sortby=`Aggregate.likes`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\\\Model\\\\ReactionAggregate","on":"Aggregate.object_id = msProduct.id AND Aggregate.object_class = 'msProduct'"}}`
+    &sortby=`MAX(Aggregate.likes)`
     &sortdir=`DESC`
 ]]
 ```

@@ -1,7 +1,9 @@
 import './widget.css';
+import { initCountLive } from './count-live';
 import { initWidgets } from './widget';
 
 function autoInit(): void {
+  initCountLive(document);
   initWidgets(document);
 }
 
