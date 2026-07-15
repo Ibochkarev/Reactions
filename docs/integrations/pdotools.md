@@ -2,6 +2,28 @@
 
 Сортировка и вывод ресурсов, товаров и других объектов по реакциям через `leftJoin` на модель `ReactionAggregate`.
 
+## leftJoin: JSON и Fenom
+
+`leftJoin` передаётся в pdoTools как **массив** или JSON-строка. Класс модели в JSON пишется с экранированием: `"Reactions\\Model\\ReactionAggregate"` (в итоговой строке два символа `\` перед `Model`).
+
+| Способ | Пример |
+| --- | --- |
+| MODX-тег | `"class":"Reactions\\\\Model\\\\ReactionAggregate"` — **четыре** `\` в шаблоне, в JSON остаётся два |
+| Fenom | массив `'class' => 'Reactions\Model\ReactionAggregate'` — предпочтительно, без JSON |
+| PHP / сниппет | `'class' => ReactionAggregate::class` или массив join |
+
+Если JSON невалиден, `json_decode` в msProducts/pdoResources молча не добавит join. Тогда в логе:
+
+`Unknown column 'Aggregate.likes' in 'order clause'`
+
+### msProducts и ONLY_FULL_GROUP_BY
+
+`msProducts` всегда группирует по `msProduct.id`. На MySQL с `ONLY_FULL_GROUP_BY` нельзя сортировать просто по `Aggregate.likes` — используйте агрегат:
+
+`&sortby=`MAX(Aggregate.likes)`` или `'sortby' => 'MAX(Aggregate.likes)'`
+
+Для `pdoResources` без `GROUP BY` достаточно `Aggregate.likes`.
+
 ## Модель ReactionAggregate
 
 Таблица `reactions_aggregates` хранит предрасчитанные метрики:
@@ -27,7 +49,7 @@ MODX:
     &parents=`0`
     &depth=`10`
     &limit=`12`
-    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource' AND Aggregate.context = 'web'"}}`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\\\Model\\\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource' AND Aggregate.context = 'web'"}}`
     &sortby=`Aggregate.likes`
     &sortdir=`DESC`
     &tpl=`tpl.article.card`
@@ -41,7 +63,12 @@ Fenom:
     'parents' => 0,
     'depth' => 10,
     'limit' => 12,
-    'leftJoin' => '{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = \'modResource\' AND Aggregate.context = \'web\'"}}',
+    'leftJoin' => [
+        'Aggregate' => [
+            'class' => 'Reactions\Model\ReactionAggregate',
+            'on' => "Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource' AND Aggregate.context = 'web'",
+        ],
+    ],
     'sortby' => 'Aggregate.likes',
     'sortdir' => 'DESC',
     'tpl' => 'tpl.article.card',
@@ -55,7 +82,7 @@ MODX:
 ```
 [[!pdoResources?
     &parents=`5`
-    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\\\Model\\\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
     &sortby=`Aggregate.rating`
     &sortdir=`DESC`
     &limit=`10`
@@ -67,7 +94,12 @@ Fenom:
 ```
 {'!pdoResources' | snippet : [
     'parents' => 5,
-    'leftJoin' => '{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = \'modResource\'"}}',
+    'leftJoin' => [
+        'Aggregate' => [
+            'class' => 'Reactions\Model\ReactionAggregate',
+            'on' => "Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'",
+        ],
+    ],
     'sortby' => 'Aggregate.rating',
     'sortdir' => 'DESC',
     'limit' => 10,
@@ -81,7 +113,7 @@ MODX:
 ```
 [[!pdoResources?
     &parents=`0`
-    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\\\Model\\\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
     &sortby=`Aggregate.trending_score`
     &sortdir=`DESC`
     &limit=`8`
@@ -93,7 +125,12 @@ Fenom:
 ```
 {'!pdoResources' | snippet : [
     'parents' => 0,
-    'leftJoin' => '{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = \'modResource\'"}}',
+    'leftJoin' => [
+        'Aggregate' => [
+            'class' => 'Reactions\Model\ReactionAggregate',
+            'on' => "Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'",
+        ],
+    ],
     'sortby' => 'Aggregate.trending_score',
     'sortdir' => 'DESC',
     'limit' => 8,
@@ -146,7 +183,7 @@ MODX:
 [[!pdoPage?
     &element=`pdoResources`
     &parents=`0`
-    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\\\Model\\\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
     &sortby=`Aggregate.likes`
     &sortdir=`DESC`
     &tpl=`tpl.article.card`
@@ -160,7 +197,12 @@ Fenom:
 {'!pdoPage' | snippet : [
     'element' => 'pdoResources',
     'parents' => 0,
-    'leftJoin' => '{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = \'modResource\'"}}',
+    'leftJoin' => [
+        'Aggregate' => [
+            'class' => 'Reactions\Model\ReactionAggregate',
+            'on' => "Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'",
+        ],
+    ],
     'sortby' => 'Aggregate.likes',
     'sortdir' => 'DESC',
     'tpl' => 'tpl.article.card',
@@ -189,7 +231,7 @@ MODX:
 ```
 [[!pdoResources?
     &parents=`0`
-    &leftJoin=`{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
+    &leftJoin=`{"Aggregate":{"class":"Reactions\\\\Model\\\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'"}}`
     &where=`{"Aggregate.likes:>":0}`
     &sortby=`Aggregate.likes`
     &sortdir=`DESC`
@@ -201,7 +243,12 @@ Fenom:
 ```
 {'!pdoResources' | snippet : [
     'parents' => 0,
-    'leftJoin' => '{"Aggregate":{"class":"Reactions\\Model\\ReactionAggregate","on":"Aggregate.object_id = modResource.id AND Aggregate.object_class = \'modResource\'"}}',
+    'leftJoin' => [
+        'Aggregate' => [
+            'class' => 'Reactions\Model\ReactionAggregate',
+            'on' => "Aggregate.object_id = modResource.id AND Aggregate.object_class = 'modResource'",
+        ],
+    ],
     'where' => '{"Aggregate.likes:>":0}',
     'sortby' => 'Aggregate.likes',
     'sortdir' => 'DESC',

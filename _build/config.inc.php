@@ -11,7 +11,7 @@ if (!defined('MODX_CORE_PATH')) {
 return [
     'name' => 'Reactions',
     'name_lower' => 'reactions',
-    'version' => '1.0.0',
+    'version' => '1.0.1',
     'release' => 'pl',
     'install' => false,
     'update' => [

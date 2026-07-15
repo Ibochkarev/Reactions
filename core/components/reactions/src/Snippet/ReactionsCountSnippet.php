@@ -31,7 +31,7 @@ class ReactionsCountSnippet extends AbstractSnippet
         $pctUp = $total > 0 ? (int) round($likes / $total * 100) : 0;
         $pctDown = $total > 0 ? (int) round($dislikes / $total * 100) : 0;
 
-        $output = CountFormat::apply(
+        $text = CountFormat::apply(
             $format,
             [
                 '{TOTAL}' => (string) $total,
@@ -43,6 +43,24 @@ class ReactionsCountSnippet extends AbstractSnippet
             ],
             $counts,
         );
+
+        $attrs = [
+            'class' => 'reactions-count',
+            'data-class-key' => $classKey,
+            'data-object-id' => (string) $objectId,
+            'data-context' => $context,
+            'data-format' => $format,
+        ];
+        if ($typeFilter !== '') {
+            $attrs['data-type'] = $typeFilter;
+        }
+
+        $attrHtml = '';
+        foreach ($attrs as $name => $value) {
+            $attrHtml .= ' ' . $name . '="' . htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';
+        }
+
+        $output = '<span' . $attrHtml . '>' . htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
 
         return $this->finish($output, $scriptProperties);
     }

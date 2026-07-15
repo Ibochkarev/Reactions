@@ -1,4 +1,5 @@
 import { createNonce, fetchCounts, getCsrf, react, unreact } from './api';
+import { syncCountsForObject } from './count-live';
 import {
   REACTION_SETS,
   type CountsData,
@@ -241,6 +242,7 @@ export class ReactionsWidget {
       this.applyCounts(data);
       this.state.loading = false;
       this.render();
+      this.syncAdjacentCounts();
     } catch (err) {
       this.state.loading = false;
       this.state.error = err instanceof Error ? err.message : 'Failed to load reactions';
@@ -251,6 +253,15 @@ export class ReactionsWidget {
   applyCounts(data: CountsData): void {
     this.state.counts = { ...data.counts };
     this.state.userReactions = [...data.user_reaction];
+  }
+
+  private syncAdjacentCounts(): void {
+    syncCountsForObject(
+      this.config.classKey,
+      this.config.objectId,
+      this.config.context,
+      this.state.counts,
+    );
   }
 
   private broadcastUpdate(): void {
@@ -509,6 +520,7 @@ export class ReactionsWidget {
     };
 
     this.applyOptimistic(typeName, isActive);
+    this.syncAdjacentCounts();
     this.state.pending = true;
     this.state.error = null;
     this.render();
@@ -529,11 +541,13 @@ export class ReactionsWidget {
         this.state.counts = snapshot.counts;
         this.state.userReactions = snapshot.userReactions;
         this.state.error = err instanceof Error ? err.message : 'Reaction failed';
+        this.syncAdjacentCounts();
       }
     } finally {
       this.state.pending = false;
       this.render();
       if (synced) {
+        this.syncAdjacentCounts();
         this.broadcastUpdate();
       }
     }
